@@ -293,6 +293,20 @@ http://localhost:6090/vnc.html
 python ./backend/main.py
 ```
 
+- 运行实时流式字幕OCR引擎（高性能模式）
+
+```shell
+python run_realtime.py --video ./test/test_cn.mp4 --lang ch --mode fast --sample 0.8 --batch-size 8
+```
+
+可选参数：
+
+```text
+--min-sample 0.2   # 字幕变化频繁时的最小采样间隔
+--max-sample 1.2   # 字幕稳定时的最大采样间隔
+--out xxx.srt      # 指定输出文件
+```
+
 
 
 ## 常见问题与解决方案
