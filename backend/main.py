@@ -119,6 +119,8 @@ class SubtitleExtractor:
         self.subtitle_ocr_progress_queue = None
         # vsf运行状态
         self.vsf_running = False
+        # 入队的帧任务数量（用于调试提帧是否正常）
+        self.frame_task_count = 0
 
     def run(self):
         """
@@ -214,6 +216,7 @@ class SubtitleExtractor:
                 # subtitle_ocr_task_queue: (total_frame_count总帧数, current_frame_no当前帧, dt_box检测框, rec_res识别结果, 当前帧时间，subtitle_area字幕区域)
                 task = (self.frame_count, current_frame_no, None, None, None, self.default_subtitle_area)
                 self.subtitle_ocr_task_queue.put(task)
+                self.frame_task_count += 1
                 # 跳过剩下的帧
                 for i in range(int(self.fps // config.EXTRACT_FREQUENCY) - 1):
                     ret, _ = self.video_cap.read()
@@ -223,6 +226,7 @@ class SubtitleExtractor:
                         self.update_progress(frame_extract=(current_frame_no / self.frame_count) * 100)
 
         self.video_cap.release()
+        print(f"[FrameExtract][FPS] queued tasks: {self.frame_task_count}")
 
     def extract_frame_by_det(self):
         """
@@ -335,6 +339,7 @@ class SubtitleExtractor:
                 task = (total_frame_count, ocr_info_frame_no, dt_box, rec_res, None, self.default_subtitle_area)
                 # 添加任务
                 self.subtitle_ocr_task_queue.put(task)
+                self.frame_task_count += 1
                 self.update_progress(frame_extract=(current_frame_no / self.frame_count) * 100)
 
         while len(ocr_args_list) > 0:
@@ -347,13 +352,19 @@ class SubtitleExtractor:
             task = (total_frame_count, ocr_info_frame_no, dt_box, rec_res, None, self.default_subtitle_area)
             # 添加任务
             self.subtitle_ocr_task_queue.put(task)
+            self.frame_task_count += 1
         self.video_cap.release()
+        print(f"[FrameExtract][DET] queued tasks: {self.frame_task_count}")
 
     def extract_frame_by_vsf(self):
         """
        通过调用videoSubFinder获取字幕帧
        """
         self.use_vsf = True
+
+        def ms_to_frame_no(total_ms):
+            # total_ms 是毫秒，换算为帧号需要先转秒再乘fps
+            return int(round((total_ms / 1000.0) * self.fps))
 
         def count_process():
             duration_ms = (self.frame_count / self.fps) * 1000
@@ -377,9 +388,10 @@ class SubtitleExtractor:
                         h, m, s, ms = rgb_image.split('__')[0].split('_')
                         total_ms = int(ms) + int(s) * 1000 + int(m) * 60 * 1000 + int(h) * 60 * 60 * 1000
                         if total_ms > last_total_ms:
-                            frame_no = int(total_ms / self.fps)
+                            frame_no = ms_to_frame_no(total_ms)
                             task = (self.frame_count, frame_no, None, None, total_ms, self.default_subtitle_area)
                             self.subtitle_ocr_task_queue.put(task)
+                            self.frame_task_count += 1
                         last_total_ms = total_ms
                         if total_ms / duration_ms >= 1:
                             self.update_progress(frame_extract=100)
@@ -402,9 +414,10 @@ class SubtitleExtractor:
                     h, m, s, ms = line.split('__')[0].split('_')
                     total_ms = int(ms) + int(s) * 1000 + int(m) * 60 * 1000 + int(h) * 60 * 60 * 1000
                     if total_ms > last_total_ms:
-                        frame_no = int(total_ms / self.fps)
+                        frame_no = ms_to_frame_no(total_ms)
                         task = (self.frame_count, frame_no, None, None, total_ms, self.default_subtitle_area)
                         self.subtitle_ocr_task_queue.put(task)
+                        self.frame_task_count += 1
                     last_total_ms = total_ms
                     if total_ms / duration_ms >= 1:
                         self.update_progress(frame_extract=100)
@@ -459,6 +472,20 @@ class SubtitleExtractor:
                                  close_fds='posix' in sys.builtin_module_names, shell=True)
             Thread(target=vsf_output, daemon=True, args=(p.stderr,)).start()
             p.wait()
+            if p.returncode != 0:
+                print(f"[VSF] failed with exit code {p.returncode}")
+                if p.returncode == 139:
+                    print("[VSF] segmentation fault detected, fallback to FPS extraction")
+                if self.frame_task_count == 0:
+                    self.use_vsf = False
+                    self.extract_frame_by_fps()
+                    return
+            if self.frame_task_count == 0:
+                print("[VSF] no frame tasks produced, fallback to FPS extraction")
+                self.use_vsf = False
+                self.extract_frame_by_fps()
+                return
+            print(f"[FrameExtract][VSF] queued tasks: {self.frame_task_count}")
             self.vsf_running = False
 
     def filter_watermark(self):
@@ -726,7 +753,7 @@ class SubtitleExtractor:
                                                             int(frame_no % self.fps))
 
     def _timestamp_to_frameno(self, time_ms):
-        return int(time_ms / self.fps)
+        return int(round((time_ms / 1000.0) * self.fps))
 
     def _frameno_to_milliseconds(self, frame_no):
         return float(int(frame_no / self.fps * 1000))

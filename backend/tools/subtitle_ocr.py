@@ -16,8 +16,47 @@ import numpy as np
 from collections import namedtuple
 
 
+def preprocess_for_ocr(frame):
+    """
+    预处理OCR输入：灰度化、降噪、放大、阈值化。
+    返回处理后的BGR图像与缩放倍率。
+    """
+    if frame is None or frame.size == 0:
+        return frame, 1.0
+
+    if len(frame.shape) == 3:
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = frame
+
+    denoised = cv2.fastNlMeansDenoising(gray, None, h=10, templateWindowSize=7, searchWindowSize=21)
+    scale = 2.0
+    resized = cv2.resize(denoised, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+    binary = cv2.adaptiveThreshold(
+        resized,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,
+        31,
+        15,
+    )
+    processed = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
+    return processed, scale
+
+
+def remap_coordinate(coordinate, offset_x=0, offset_y=0, scale=1.0):
+    """将裁剪/缩放后的坐标映射回原始视频坐标系。"""
+    xmin, xmax, ymin, ymax = coordinate
+    if scale != 1.0:
+        xmin = int(round(xmin / scale))
+        xmax = int(round(xmax / scale))
+        ymin = int(round(ymin / scale))
+        ymax = int(round(ymax / scale))
+    return xmin + offset_x, xmax + offset_x, ymin + offset_y, ymax + offset_y
+
+
 def extract_subtitles(data, text_recogniser, img, raw_subtitle_file,
-                      sub_area, options, dt_box_arg, rec_res_arg, ocr_loss_debug_path):
+                      sub_area, options, dt_box_arg, rec_res_arg, ocr_loss_debug_path, preprocess_meta=None):
     """
     提取视频帧中的字幕信息
     """
@@ -28,8 +67,13 @@ def extract_subtitles(data, text_recogniser, img, raw_subtitle_file,
     if dt_box is None or rec_res is None:
         dt_box, rec_res = text_recogniser.predict(img)
         # rec_res格式为： ("hello", 0.997)
-    # 获取文本坐标
-    coordinates = get_coordinates(dt_box)
+    preprocess_meta = preprocess_meta or {}
+    offset_x = int(preprocess_meta.get('offset_x', 0))
+    offset_y = int(preprocess_meta.get('offset_y', 0))
+    scale = float(preprocess_meta.get('scale', 1.0))
+
+    # 获取文本坐标，并映射回原始帧坐标系
+    coordinates = [remap_coordinate(c, offset_x, offset_y, scale) for c in get_coordinates(dt_box)]
     # 将结果写入txt文本中
     if options.REC_CHAR_TYPE == 'en':
         # 如果识别语言为英文，则去除中文
@@ -38,6 +82,7 @@ def extract_subtitles(data, text_recogniser, img, raw_subtitle_file,
         text_res = [(res[0], res[1]) for res in rec_res]
     line = ''
     loss_list = []
+    selected_texts = []
     for content, coordinate in zip(text_res, coordinates):
         text = content[0]
         prob = content[1]
@@ -59,13 +104,17 @@ def extract_subtitles(data, text_recogniser, img, raw_subtitle_file,
                 if overflow_area_rate <= options.SUB_AREA_DEVIATION_RATE and prob > options.DROP_SCORE:
                     # 保留该帧
                     selected = True
+                    selected_texts.append(text)
                     line += f'{str(data["i"]).zfill(8)}\t{coordinate}\t{text}\n'
                     raw_subtitle_file.write(f'{str(data["i"]).zfill(8)}\t{coordinate}\t{text}\n')
             # 保存丢掉的识别结果
             loss_info = namedtuple('loss_info', 'text prob overflow_area_rate coordinate selected')
             loss_list.append(loss_info(text, prob, overflow_area_rate, coordinate, selected))
         else:
+            selected_texts.append(text)
             raw_subtitle_file.write(f'{str(data["i"]).zfill(8)}\t{coordinate}\t{text}\n')
+    if selected_texts and (int(data['i']) % 10 == 1):
+        print(f"[OCR][{str(data['i']).zfill(8)}] {' '.join(selected_texts)}")
     # 输出调试信息
     dump_debug_info(options, line, img, loss_list, ocr_loss_debug_path, sub_area, data)
 
@@ -138,18 +187,18 @@ def ocr_task_consumer(ocr_queue, raw_subtitle_path, sub_area, video_path, option
     with open(raw_subtitle_path, mode='w+', encoding='utf-8') as raw_subtitle_file:
         while True:
             try:
-                frame_no, frame, dt_box, rec_res = ocr_queue.get(block=True)
+                frame_no, frame, dt_box, rec_res, preprocess_meta = ocr_queue.get(block=True)
                 if frame_no == -1:
                     return
                 data['i'] = frame_no
                 extract_subtitles(data, text_recogniser, frame, raw_subtitle_file, sub_area, options, dt_box,
-                                  rec_res, ocr_loss_debug_path)
+                                  rec_res, ocr_loss_debug_path, preprocess_meta)
             except Exception as e:
                 print(e)
                 break
 
 
-def ocr_task_producer(ocr_queue, task_queue, progress_queue, video_path, raw_subtitle_path):
+def ocr_task_producer(ocr_queue, task_queue, progress_queue, video_path, raw_subtitle_path, sub_area):
     """
     生产者：负责生产用于OCR识别的数据，将需要进行ocr识别的数据加入ocr_queue中
     :param ocr_queue (current_frame_no当前帧帧号, frame 视频帧, dt_box检测框, rec_res识别结果)
@@ -170,7 +219,7 @@ def ocr_task_producer(ocr_queue, task_queue, progress_queue, video_path, raw_sub
             # current_frame 等于-1说明所有视频帧已经读完
             if current_frame_no == -1:
                 # ocr识别队列加入结束标志
-                ocr_queue.put((-1, None, None, None))
+                ocr_queue.put((-1, None, None, None, None))
                 # 更新进度条
                 tbar.update(tbar.total - tbar.n)
                 break
@@ -185,10 +234,30 @@ def ocr_task_producer(ocr_queue, task_queue, progress_queue, video_path, raw_sub
             ret, frame = cap.read()
             # 如果读取成功
             if ret:
+                offset_x, offset_y = 0, 0
+                # 明确字幕框时，先按用户框裁剪，降低背景噪声
+                if isinstance(sub_area, (tuple, list)) and len(sub_area) == 4:
+                    y_min, y_max, x_min, x_max = map(int, sub_area)
+                    y_min = max(0, min(y_min, frame.shape[0] - 1))
+                    y_max = max(0, min(y_max, frame.shape[0]))
+                    x_min = max(0, min(x_min, frame.shape[1] - 1))
+                    x_max = max(0, min(x_max, frame.shape[1]))
+                    if y_max > y_min and x_max > x_min:
+                        frame = frame[y_min:y_max, x_min:x_max]
+                        offset_x, offset_y = x_min, y_min
+
                 # 根据默认字幕位置，则对视频帧进行裁剪，裁剪后处理
                 if default_subtitle_area is not None:
                     frame = frame_preprocess(default_subtitle_area, frame)
-                ocr_queue.put((current_frame_no, frame, dt_box, rec_res))
+
+                frame, scale = preprocess_for_ocr(frame)
+                preprocess_meta = {'offset_x': offset_x, 'offset_y': offset_y, 'scale': scale}
+
+                # 经过裁剪/缩放后，缓存检测框坐标不再可复用
+                if offset_x != 0 or offset_y != 0 or scale != 1.0:
+                    dt_box, rec_res = None, None
+
+                ocr_queue.put((current_frame_no, frame, dt_box, rec_res, preprocess_meta))
         except Exception as e:
             print(e)
             break
@@ -212,7 +281,7 @@ def subtitle_extract_handler(task_queue, progress_queue, video_path, raw_subtitl
     ocr_queue = queue.Queue(20)
     # 创建一个OCR事件生产者线程
     ocr_event_producer_thread = Thread(target=ocr_task_producer,
-                                       args=(ocr_queue, task_queue, progress_queue, video_path, raw_subtitle_path,),
+                                       args=(ocr_queue, task_queue, progress_queue, video_path, raw_subtitle_path, sub_area,),
                                        daemon=True)
     # 创建一个OCR事件消费者提取线程
     ocr_event_consumer_thread = Thread(target=ocr_task_consumer,

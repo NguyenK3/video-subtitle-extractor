@@ -14,3 +14,4 @@ shapely==2.0.7
 six==1.17.0
 setuptools==75.8.0
 je-paddleocr==2.9.1
+chardet<6

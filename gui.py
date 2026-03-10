@@ -579,6 +579,12 @@ if __name__ == '__main__':
         subtitleExtractorGUI = SubtitleExtractorGUI()
         subtitleExtractorGUI.run()
     except Exception as e:
+        err_msg = str(e).lower()
+        if "couldn't connect to display" in err_msg or "no display name and no $display" in err_msg:
+            print("GUI cannot start: no DISPLAY is available in the current environment.")
+            print("Use CLI mode instead: python backend/main.py")
+            print("Or run gui.py on a local desktop with X11/Wayland display support.")
+            raise SystemExit(1)
         print(f'[{type(e)}] {e}')
         import traceback
         traceback.print_exc()

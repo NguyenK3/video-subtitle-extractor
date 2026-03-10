@@ -251,6 +251,42 @@ cd <源码所在目录>
 python gui.py
 ```
 
+- 在 Linux 无桌面环境（headless）下通过 Xvfb 运行 GUI
+
+```shell
+sudo apt-get install -y xvfb xauth
+chmod +x run_xvfb_gui.sh
+./run_xvfb_gui.sh
+```
+
+> 可选：通过环境变量修改虚拟屏分辨率（默认 1920x1080x24）
+
+```shell
+XVFB_RESOLUTION=2560x1440x24 ./run_xvfb_gui.sh
+```
+
+- 在 Linux headless 下通过 noVNC 用浏览器访问 GUI（可指定端口）
+
+```shell
+sudo apt-get install -y xvfb xauth x11vnc novnc websockify
+chmod +x start_novnc_gui.sh stop_novnc_gui.sh
+
+# 例：使用 6090 端口
+./start_novnc_gui.sh 6090
+```
+
+打开浏览器访问：
+
+```text
+http://localhost:6090/vnc.html
+```
+
+停止服务：
+
+```shell
+./stop_novnc_gui.sh
+```
+
 - 运行命令行版本（CLI）
 
 ```shell

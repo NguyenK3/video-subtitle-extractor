@@ -1,0 +1,23 @@
+Metadata-Version: 2.1
+Name: PySimpleGUI-4-foss
+Version: 4.60.4.1
+Summary: THIS IS A MIRROR OF THE FINAL VERSION OF PYSIMPLEGUI4 THAT WAS FOSS. No further updates/support.
+Home-page: https://github.com/csm10495/PySimpleGUI-4-foss
+Author: was: PySimpleGUI
+Author-email: was: PySimpleGUI@PySimpleGUI.org
+Keywords: GUI UI tkinter Qt WxPython Remi wrapper simple easy beginner novice student graphics progressbar progressmeter
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)
+Classifier: Topic :: Multimedia :: Graphics
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
+License-File: license.txt
+
