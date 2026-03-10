@@ -1,0 +1,46 @@
+@font-face {
+  font-family: "NotoSans";
+  src: url("/fonts/NotoSans-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NotoSerif";
+  src: url("/fonts/NotoSerif-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NotoSansCJK";
+  src: url("/fonts/NotoSansCJK-Regular.ttc") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SourceHanSans";
+  src: url("/fonts/SourceHanSans-Regular.otf") format("opentype"),
+       url("/fonts/SourceHanSansSC-Regular.otf") format("opentype"),
+       url("/fonts/SourceHanSansCN-Regular.otf") format("opentype");
+  font-display: swap;
+}
+
+:root,
+html,
+body,
+button,
+input,
+select,
+textarea,
+#noVNC-control-bar,
+#noVNC_status,
+#noVNC_transition_text,
+#noVNC_keyboardinput,
+.noVNC_message {
+  font-family:
+    "NotoSans",
+    "NotoSansCJK",
+    "NotoSerif",
+    "DejaVu Sans",
+    "SourceHanSans",
+    sans-serif !important;
+}

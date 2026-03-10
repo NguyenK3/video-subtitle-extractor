@@ -275,10 +275,49 @@ chmod +x start_novnc_gui.sh stop_novnc_gui.sh
 ./start_novnc_gui.sh 6090
 ```
 
+为 noVNC 安装多语言字体（中文/日文/韩文/越南文/Unicode）并生成带 @font-face 的 Web 客户端：
+
+```shell
+chmod +x scripts/install_novnc_fonts.sh scripts/prepare_novnc_web.sh
+./scripts/install_novnc_fonts.sh
+./scripts/prepare_novnc_web.sh
+```
+
+默认字体栈：
+
+```text
+NotoSans, NotoSansCJK, NotoSerif, DejaVu Sans, SourceHanSans, sans-serif
+```
+
+noVNC 会从以下位置加载字体：
+
+```text
+/usr/share/fonts   # 系统字体安装目录（Linux/Docker）
+web/novnc/fonts    # noVNC Web 目录内字体副本
+```
+
+Docker/Linux 服务器建议：
+
+```shell
+# Dockerfile 示例
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  xvfb xauth x11vnc novnc websockify \
+  fonts-noto fonts-noto-core fonts-noto-extra fonts-noto-cjk \
+  fonts-dejavu-core fonts-dejavu-extra && \
+  fc-cache -f -v
+```
+
 打开浏览器访问：
 
 ```text
 http://localhost:6090/vnc.html
+```
+
+验证 noVNC 字体加载（端口示例 6090）：
+
+```shell
+chmod +x scripts/verify_novnc_fonts.sh
+./scripts/verify_novnc_fonts.sh 6090
 ```
 
 停止服务：

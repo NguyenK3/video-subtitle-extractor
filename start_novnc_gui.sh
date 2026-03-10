@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STATE_DIR="$ROOT_DIR/.novnc"
 mkdir -p "$STATE_DIR"
+WEB_ROOT="${NOVNC_WEB_ROOT:-$ROOT_DIR/web/novnc}"
 
 NOVNC_PORT="${1:-${NOVNC_PORT:-6080}}"
 DISPLAY_NUM="${DISPLAY_NUM:-:99}"
@@ -50,7 +51,11 @@ echo $! >"$STATE_DIR/gui.pid"
 x11vnc -display "$DISPLAY" -rfbport "$VNC_PORT" -localhost -forever -shared -nopw >"$STATE_DIR/x11vnc.log" 2>&1 &
 echo $! >"$STATE_DIR/vnc.pid"
 
-websockify --web=/usr/share/novnc/ "$NOVNC_PORT" "localhost:$VNC_PORT" >"$STATE_DIR/novnc.log" 2>&1 &
+if [[ -x "$ROOT_DIR/scripts/prepare_novnc_web.sh" ]]; then
+  "$ROOT_DIR/scripts/prepare_novnc_web.sh" >/dev/null
+fi
+
+websockify --web="$WEB_ROOT" "$NOVNC_PORT" "localhost:$VNC_PORT" >"$STATE_DIR/novnc.log" 2>&1 &
 echo $! >"$STATE_DIR/novnc.pid"
 
 echo "noVNC is running."
