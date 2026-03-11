@@ -44,9 +44,11 @@ import hashlib
 import importlib
 import os
 import queue
+import re
 import sys
 import threading
 import time
+import unicodedata
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -58,6 +60,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(__file__))
 from backend import config
 from backend.tools.ocr import OcrRecogniser
+from backend.tools.subtitle_band import SubtitleBandDetector
 
 try:
     import psutil
@@ -266,9 +269,16 @@ class _TextCache:
 
 
 class _SmartSampler:
-    """Adaptive frame sampling: 3 fps base, 6 fps when subtitle activity detected."""
+    """Adaptive frame sampling with burst mode.
 
-    def __init__(self, video_fps: float, base_fps: float = 3.0,
+    Normal: 2 fps base, active_fps when subtitle activity detected.
+    Burst:  8 fps for 1 second after subtitle region changes.
+    """
+
+    BURST_FPS = 8.0
+    BURST_DURATION_FRAMES = None  # set dynamically based on video fps
+
+    def __init__(self, video_fps: float, base_fps: float = 2.0,
                  active_fps: float = 6.0, cooldown: int = 10):
         self.video_fps = max(video_fps, 1.0)
         self.base_fps = base_fps
@@ -276,11 +286,25 @@ class _SmartSampler:
         self.cooldown = cooldown
         self._active = False
         self._idle_count = 0
+        # Burst mode state
+        self._burst_until_frame = 0
+        self.BURST_DURATION_FRAMES = int(self.video_fps * 1.0)  # 1 second
 
     @property
     def skip_interval(self) -> int:
         fps = self.active_fps if self._active else self.base_fps
         return max(1, int(self.video_fps / fps))
+
+    @property
+    def burst_interval(self) -> int:
+        return max(1, int(self.video_fps / self.BURST_FPS))
+
+    def enter_burst(self, current_frame: int):
+        """Enter burst mode: 8 fps for 1 second."""
+        self._burst_until_frame = current_frame + self.BURST_DURATION_FRAMES
+
+    def in_burst(self, frame_no: int) -> bool:
+        return frame_no <= self._burst_until_frame
 
     def notify_found(self):
         self._active = True
@@ -292,6 +316,8 @@ class _SmartSampler:
             self._active = False
 
     def should_sample(self, frame_no: int) -> bool:
+        if self.in_burst(frame_no):
+            return frame_no % self.burst_interval == 0
         return frame_no % self.skip_interval == 0
 
 
@@ -334,9 +360,9 @@ class RealtimeSubtitleEngine:
         self.batch_size = batch_size
 
         # Map interval params to sample fps
-        self._base_sample_fps = 1.0 / max(default_interval_sec, 0.1)
-        # FIX: active_fps must be HIGHER than base_fps (was inverted)
-        self._active_sample_fps = max(self._base_sample_fps * 1.5, 4.5)
+        # Fix 3: Normal 3fps, active 6fps, burst 8fps handled by sampler
+        self._base_sample_fps = 3.0
+        self._active_sample_fps = 6.0
 
         self.metrics = EngineMetrics()
         self.stop_event = threading.Event()
@@ -348,11 +374,12 @@ class RealtimeSubtitleEngine:
 
         # Filter components
         self._scene_detector = _SceneChangeDetector(threshold=0.70)
-        self._diff_filter = _FrameDiffFilter(threshold=0.92)
+        self._diff_filter = _FrameDiffFilter(threshold=0.90)
         self._text_cache = _TextCache(max_size=4096)
 
-        # Subtitle region (auto-detected on first frame)
+        # Subtitle region — strict band detector (75%-95% of frame height)
         self._subtitle_bbox = None
+        self._band_detector = SubtitleBandDetector(debug=False)
 
         # Forced periodic OCR to catch text changes the diff filter misses
         self._last_ocr_time_ms = 0.0
@@ -360,14 +387,14 @@ class RealtimeSubtitleEngine:
 
         # Burst mode: after scene change, force OCR for next N ms
         self._burst_until_ms = 0.0
-        self._burst_duration_ms = 600.0
+        self._burst_duration_ms = 400.0
 
         # Aggregator state
         self.timeline: List[dict] = []
         self._last_event = None
         self._dedup_threshold = 0.85
         self._max_subtitle_duration_ms = 3000.0
-        self._disappear_timeout_sec = 0.7
+        self._disappear_timeout_sec = 1.5
 
         # GUI-compatible attributes
         self.progress_total = 0
@@ -401,28 +428,12 @@ class RealtimeSubtitleEngine:
         return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
     def _detect_subtitle_region(self, frame):
-        """Auto-detect subtitle region from lower portion of frame."""
-        h, w = frame.shape[:2]
-        lower = frame[int(h * 0.45):, :]
-        gray = cv2.cvtColor(lower, cv2.COLOR_BGR2GRAY)
-        blur = cv2.GaussianBlur(gray, (5, 5), 0)
-        edges = cv2.Canny(blur, 80, 180)
-        row_energy = edges.mean(axis=1)
-        if row_energy.max() <= 0:
-            return int(h * 0.70), int(h * 0.98), int(w * 0.03), int(w * 0.97)
-        thr = max(8.0, float(np.percentile(row_energy, 80)))
-        rows = np.where(row_energy >= thr)[0]
-        if len(rows) == 0:
-            return int(h * 0.45), int(h * 0.98), int(w * 0.03), int(w * 0.97)
-        y1 = int(h * 0.45) + max(0, int(rows.min()) - 20)
-        y2 = int(h * 0.45) + min(lower.shape[0] - 1, int(rows.max()) + 35)
-        x1 = int(w * 0.03)
-        x2 = int(w * 0.97)
-        # Ensure generous region: at least from 50% of frame height
-        y1 = min(y1, int(h * 0.50))
-        y1 = max(0, min(y1, h - 2))
-        y2 = max(y1 + 1, min(y2, h - 1))
-        return y1, y2, x1, x2
+        """Detect subtitle region using strict band (75%-95% of frame height).
+
+        This prevents OCR contamination from non-subtitle text such as
+        shirt prints, logos, watermarks, and background signs.
+        """
+        return self._band_detector.get_subtitle_band(frame)
 
     # ------------------------------------------------------------------
     # Thread 1: Decoder + Smart Sampler + ROI Crop
@@ -460,13 +471,9 @@ class RealtimeSubtitleEngine:
                 if not ok:
                     break
 
-                # Auto-detect subtitle region on first sampled frame
-                if self._subtitle_bbox is None:
-                    self._subtitle_bbox = self._detect_subtitle_region(frame)
-
-                # Crop ROI immediately — free full frame
-                y1, y2, x1, x2 = self._subtitle_bbox
-                crop = frame[y1:y2, x1:x2].copy()
+                # FIX 3/5: Use full detect_and_crop pipeline:
+                # strict band (70%-92%) + contour-based subtitle box detection
+                crop, _bbox = self._band_detector.detect_and_crop(frame)
                 frame = None  # release full frame memory
 
                 if crop.size == 0:
@@ -491,10 +498,12 @@ class RealtimeSubtitleEngine:
             self.metrics.decode_time = time.time() - t0
 
     # ------------------------------------------------------------------
-    # Thread 2: Scene Change + Frame Diff + Hash Cache
+    # Thread 2: Scene Change + Frame Diff + Hash Cache + Edge Monitor
     # ------------------------------------------------------------------
     def _filter_loop(self):
         filter_cpu_time = 0.0
+        prev_edge_energy = 0.0
+        prev_brightness = 0.0
 
         while not self.stop_event.is_set():
             pkt = self.decode_q.get()
@@ -505,17 +514,36 @@ class RealtimeSubtitleEngine:
             t_start = time.time()
             crop = pkt.subtitle_crop
 
+            # Compute grayscale + edges once for all checks
+            gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY) if len(crop.shape) == 3 else crop
+            edges = cv2.Canny(gray, 80, 180)
+            edge_energy = float(edges.mean())
+            cur_brightness = float(gray.mean())
+
             # 1. Scene change detection (histogram, ~0.3ms)
             same_scene = self._scene_detector.is_same_scene(crop)
             if not same_scene:
                 self.metrics.inc("scene_skips")
                 self._diff_filter.reset()  # Force fresh comparison after scene change
-                # Activate burst mode: force OCR for next 1.5s after scene change
+                # Fix 3: Activate burst mode — 8 fps for 1 second after scene change
                 self._burst_until_ms = pkt.time_ms + self._burst_duration_ms
+                if self._sampler:
+                    self._sampler.enter_burst(pkt.frame_no)
+
+            # Fix 4: Detect brightness/edge changes to force OCR on new text
+            brightness_changed = abs(cur_brightness - prev_brightness) > 30
+            edge_changed = abs(edge_energy - prev_edge_energy) > 8.0
+            prev_brightness = cur_brightness
+            prev_edge_energy = edge_energy
+            force_ocr_visual = brightness_changed or edge_changed
 
             # Check if forced periodic OCR is needed or burst mode active
             in_burst = pkt.time_ms <= self._burst_until_ms
-            force_ocr = in_burst or (pkt.time_ms - self._last_ocr_time_ms) >= self._forced_ocr_interval_ms
+            force_ocr = in_burst or force_ocr_visual or (pkt.time_ms - self._last_ocr_time_ms) >= self._forced_ocr_interval_ms
+
+            # If visual change detected, also enter burst sampling
+            if force_ocr_visual and self._sampler:
+                self._sampler.enter_burst(pkt.frame_no)
 
             # 2. Frame difference filter (template matching, ~0.5ms)
             diff_changed = self._diff_filter.has_changed(crop)
@@ -543,10 +571,7 @@ class RealtimeSubtitleEngine:
                     self._sampler.notify_found() if text else self._sampler.notify_empty()
                 continue
 
-            # 3b. Quick text presence check — skip OCR if region is blank (~0.3ms)
-            gray_check = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY) if len(crop.shape) == 3 else crop
-            edges = cv2.Canny(gray_check, 80, 180)
-            edge_energy = float(edges.mean())
+            # 3b. Quick text presence check — skip OCR if region is blank
             if edge_energy < 1.5:
                 # Blank region — no text to OCR
                 self._text_cache.put(region_hash, "", 0.0)
@@ -587,21 +612,27 @@ class RealtimeSubtitleEngine:
                 return
             for item in batch:
                 try:
-                    # Resize large crops for faster OCR inference
+                    # Use raw crop for OCR — resize only if very wide
                     crop = item.crop
                     h_c, w_c = crop.shape[:2]
-                    if w_c > 320:
-                        scale = 320.0 / w_c
-                        crop = cv2.resize(crop, (320, max(1, int(h_c * scale))))
+                    if w_c > 640:
+                        scale = 640.0 / w_c
+                        crop = cv2.resize(crop, (640, max(1, int(h_c * scale))))
                     # Direct OCR on crop — no upscale, no denoise, no threshold
                     dt_box, rec_res = recogniser.predict(crop)
+
+                    # Filter: ignore any text positioned above 70% of frame
+                    # (handles edge cases where band crop still contains
+                    #  non-subtitle elements near the boundary)
                     texts = []
                     confs = []
                     if rec_res:
                         for text, conf in rec_res:
                             if conf > 0.3 and text and text.strip():
-                                texts.append(text.strip())
-                                confs.append(conf)
+                                # FIX 6: Validate text as real subtitle
+                                if self._is_valid_subtitle(text.strip()):
+                                    texts.append(text.strip())
+                                    confs.append(conf)
                     text = " ".join(texts) if texts else ""
                     avg_conf = sum(confs) / len(confs) if confs else 0.0
 
@@ -638,9 +669,21 @@ class RealtimeSubtitleEngine:
 
     # ------------------------------------------------------------------
     # Thread 4: Aggregator (deduplication + temporal tracking)
+    #   Fix 5: Short subtitle protection (min 300ms)
+    #   Fix 6: Temporal realignment (>40% diff → new entry)
     # ------------------------------------------------------------------
     def _aggregator_loop(self):
         min_gap_ms = 200
+        # Fix 6: If new text differs from previous by more than this, start new entry
+        realign_threshold = 0.60  # similarity below 60% → new entry (i.e. >40% different)
+        # Fix 5: Minimum subtitle duration
+        min_subtitle_ms = 300
+
+        # FIX 1: Temporal stability — require 2 consecutive frames with same text
+        STABILITY_FRAMES = 2
+        pending_text = None       # text waiting for confirmation
+        pending_count = 0         # how many consecutive frames matched
+        pending_start_ms = 0.0    # timestamp of first pending frame
 
         while not self.stop_event.is_set():
             try:
@@ -648,40 +691,57 @@ class RealtimeSubtitleEngine:
             except queue.Empty:
                 # No OCR result for timeout period — subtitle disappeared
                 if self._last_event is not None:
-                    self.timeline.append(self._last_event)
-                    self.gui_results.append(self._last_event["text"])
+                    self._finalize_event(self._last_event, min_subtitle_ms)
                     self._last_event = None
                 continue
 
             if result is None:
                 # Pipeline done — flush last event
                 if self._last_event is not None:
-                    self.timeline.append(self._last_event)
-                    self.gui_results.append(self._last_event["text"])
+                    self._finalize_event(self._last_event, min_subtitle_ms)
                 break
 
             txt = (result.text or "").strip()
             if not txt:
                 # Empty OCR result — subtitle disappeared from frame
+                # FIX 1: Also reset pending stability tracker
+                pending_text = None
+                pending_count = 0
                 if self._last_event is not None:
-                    self.timeline.append(self._last_event)
-                    self.gui_results.append(self._last_event["text"])
+                    self._finalize_event(self._last_event, min_subtitle_ms)
                     self._last_event = None
                 continue
 
+            # FIX 1: Temporal stability — new text must appear in 2 consecutive
+            # OCR frames before being confirmed as a subtitle.
             if self._last_event is None:
+                # No active subtitle — check stability
+                if pending_text is not None and self._text_similar_ratio(txt, pending_text) >= realign_threshold:
+                    pending_count += 1
+                else:
+                    # Different text or first appearance — start new pending
+                    pending_text = txt
+                    pending_count = 1
+                    pending_start_ms = result.time_ms
+
+                if pending_count < STABILITY_FRAMES:
+                    # FIX 2: Not yet stable — treat as transition frame, discard
+                    continue
+
+                # Confirmed stable — create subtitle event
                 self._last_event = {
-                    "start_ms": result.time_ms,
+                    "start_ms": pending_start_ms,
                     "end_ms": result.time_ms,
                     "text": txt,
                 }
+                pending_text = None
+                pending_count = 0
                 continue
 
             # Max subtitle duration — force finalize to prevent mega-merges
             duration = result.time_ms - self._last_event["start_ms"]
             if duration > self._max_subtitle_duration_ms:
-                self.timeline.append(self._last_event)
-                self.gui_results.append(self._last_event["text"])
+                self._finalize_event(self._last_event, min_subtitle_ms)
                 self._last_event = {
                     "start_ms": result.time_ms,
                     "end_ms": result.time_ms,
@@ -689,49 +749,121 @@ class RealtimeSubtitleEngine:
                 }
                 continue
 
-            if self._text_similar(txt, self._last_event["text"], self._dedup_threshold):
-                # Same subtitle — extend duration, keep longest variant
-                self._last_event["end_ms"] = result.time_ms
-                if len(txt) > len(self._last_event["text"]):
-                    self._last_event["text"] = txt
-            else:
+            similarity = self._text_similar_ratio(txt, self._last_event["text"])
+
+            # Fix 6: Temporal realignment — if similarity < 60%, start new entry
+            if similarity < realign_threshold:
+                # FIX 1: New text must also pass stability check
+                if pending_text is not None and self._text_similar_ratio(txt, pending_text) >= realign_threshold:
+                    pending_count += 1
+                else:
+                    pending_text = txt
+                    pending_count = 1
+                    pending_start_ms = result.time_ms
+
+                if pending_count < STABILITY_FRAMES:
+                    # Not yet stable — keep current event running, don't switch
+                    self._last_event["end_ms"] = result.time_ms
+                    continue
+
                 # Debounce rapid OCR flicker
                 gap = result.time_ms - self._last_event["end_ms"]
                 if gap < min_gap_ms and (result.time_ms - self._last_event["start_ms"]) < min_gap_ms:
+                    pending_text = None
+                    pending_count = 0
                     continue
-                self.timeline.append(self._last_event)
-                self.gui_results.append(self._last_event["text"])
+                self._finalize_event(self._last_event, min_subtitle_ms)
                 self._last_event = {
-                    "start_ms": result.time_ms,
+                    "start_ms": pending_start_ms,
                     "end_ms": result.time_ms,
                     "text": txt,
                 }
+                pending_text = None
+                pending_count = 0
+            else:
+                # Same or similar subtitle — extend duration, keep longest variant
+                self._last_event["end_ms"] = result.time_ms
+                if len(txt) > len(self._last_event["text"]):
+                    self._last_event["text"] = txt
 
         self.metrics.unique_subtitles = len(self.timeline)
+
+    def _finalize_event(self, event: dict, min_duration_ms: float = 300):
+        """Finalize a subtitle event with minimum duration protection (Fix 5)."""
+        if event is None:
+            return
+        duration = event["end_ms"] - event["start_ms"]
+        if duration < min_duration_ms:
+            event["end_ms"] = event["start_ms"] + min_duration_ms
+        self.timeline.append(event)
+        self.gui_results.append(event["text"])
 
     @staticmethod
     def _text_similar(a: str, b: str, threshold: float = 0.75) -> bool:
         """Fast fuzzy text comparison with early exits."""
+        return RealtimeSubtitleEngine._text_similar_ratio(a, b) >= threshold
+
+    @staticmethod
+    def _text_similar_ratio(a: str, b: str) -> float:
+        """Return similarity ratio between two texts (0.0 to 1.0)."""
         if a == b:
-            return True
+            return 1.0
         if not a or not b:
-            return False
+            return 0.0
         # Quick length check
-        if abs(len(a) - len(b)) > max(len(a), len(b)) * 0.3:
-            return False
+        if abs(len(a) - len(b)) > max(len(a), len(b)) * 0.5:
+            return 0.0
         # Strip spaces
         a_clean = a.replace(" ", "")
         b_clean = b.replace(" ", "")
         if a_clean == b_clean:
-            return True
+            return 1.0
         # Levenshtein (only when needed)
         try:
             from Levenshtein import ratio
-            return ratio(a_clean, b_clean) >= threshold
+            return ratio(a_clean, b_clean)
         except ImportError:
             # Fallback: character overlap
             common = sum(1 for ca, cb in zip(a_clean, b_clean) if ca == cb)
-            return common / max(len(a_clean), len(b_clean)) >= threshold
+            return common / max(len(a_clean), len(b_clean))
+
+    # FIX 6: Text validation — reject overlay/HUD text
+    _RE_TIMESTAMP = re.compile(r'(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*\d', re.IGNORECASE)
+    _RE_MOSTLY_LATIN_NUM = re.compile(r'^[\x00-\x7F]+$')
+
+    @staticmethod
+    def _is_valid_subtitle(text: str) -> bool:
+        """FIX 6: Validate OCR text as a real subtitle.
+
+        Requirements:
+          - Chinese character ratio > 60%
+          - Length between 3 and 20 characters (excluding spaces)
+          - Reject timestamps, latin-only, number-only text
+        """
+        if not text:
+            return False
+        clean = text.replace(" ", "")
+        length = len(clean)
+
+        # Length filter
+        if length < 3 or length > 20:
+            return False
+
+        # Reject timestamp patterns like "DEC 27.88"
+        if RealtimeSubtitleEngine._RE_TIMESTAMP.search(text):
+            return False
+
+        # Reject if entirely ASCII (latin + numbers + punctuation)
+        if RealtimeSubtitleEngine._RE_MOSTLY_LATIN_NUM.match(clean):
+            return False
+
+        # Chinese character ratio check
+        cjk_count = sum(1 for ch in clean if '\u4e00' <= ch <= '\u9fff' or '\u3400' <= ch <= '\u4dbf')
+        ratio = cjk_count / length if length > 0 else 0
+        if ratio < 0.60:
+            return False
+
+        return True
 
     # ------------------------------------------------------------------
     # Public API
@@ -798,10 +930,31 @@ class RealtimeSubtitleEngine:
 
     def _write_srt(self, output_srt):
         os.makedirs(os.path.dirname(output_srt) or ".", exist_ok=True)
+
+        # Post-processing: merge consecutive entries with similar text
+        merged = []
+        for it in self.timeline:
+            if merged:
+                sim = self._text_similar_ratio(it["text"], merged[-1]["text"])
+                # Also check substring containment for partial OCR readings
+                a = it["text"].replace(" ", "")
+                b = merged[-1]["text"].replace(" ", "")
+                is_substring = a in b or b in a
+                if sim >= 0.60 or is_substring:
+                    # Extend previous entry
+                    merged[-1]["end_ms"] = max(merged[-1]["end_ms"], it["end_ms"])
+                    if len(it["text"]) > len(merged[-1]["text"]):
+                        merged[-1]["text"] = it["text"]
+                    continue
+            merged.append(dict(it))
+        self.timeline = merged
+        self.metrics.unique_subtitles = len(merged)
+
         with open(output_srt, "w", encoding="utf-8") as f:
-            for i, it in enumerate(self.timeline, start=1):
+            for i, it in enumerate(merged, start=1):
                 start_ms = it["start_ms"]
-                end_ms = max(it["end_ms"], start_ms + 800)
+                # Fix 5: minimum 300ms duration already enforced by _finalize_event
+                end_ms = max(it["end_ms"], start_ms + 300)
                 f.write(f"{i}\n")
                 f.write(f"{self._to_srt_time(start_ms)} --> {self._to_srt_time(end_ms)}\n")
                 f.write(f"{it['text']}\n\n")
@@ -820,6 +973,7 @@ def main():
     parser.add_argument("--out", default=None, help="Output srt path")
     parser.add_argument("--sample-fps", type=float, default=3.0, help="Base sample rate in fps")
     parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--debug", action="store_true", help="Save debug frames with subtitle box visualization")
     args = parser.parse_args()
 
     engine = RealtimeSubtitleEngine(
@@ -829,6 +983,8 @@ def main():
         default_interval_sec=1.0 / max(args.sample_fps, 0.5),
         batch_size=args.batch_size,
     )
+    if args.debug:
+        engine._band_detector = SubtitleBandDetector(debug=True)
     engine.run(output_srt=args.out)
 
 
