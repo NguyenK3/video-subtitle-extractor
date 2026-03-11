@@ -1,0 +1,1952 @@
+[
+  {
+    "frame_time_ms": 99.99876007439553,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9877970814704895
+  },
+  {
+    "frame_time_ms": 199.99752014879107,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9623817801475525
+  },
+  {
+    "frame_time_ms": 299.9962802231866,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9897557497024536
+  },
+  {
+    "frame_time_ms": 399.99504029758214,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9604571461677551
+  },
+  {
+    "frame_time_ms": 499.99380037197767,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9628963470458984
+  },
+  {
+    "frame_time_ms": 599.9925604463732,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9687017202377319
+  },
+  {
+    "frame_time_ms": 699.9913205207687,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9646486639976501
+  },
+  {
+    "frame_time_ms": 799.9900805951643,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9878748655319214
+  },
+  {
+    "frame_time_ms": 899.9888406695599,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.98451167345047
+  },
+  {
+    "frame_time_ms": 999.9876007439553,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9874022006988525
+  },
+  {
+    "frame_time_ms": 1099.986360818351,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9814608693122864
+  },
+  {
+    "frame_time_ms": 1199.9851208927464,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9862356781959534
+  },
+  {
+    "frame_time_ms": 1299.983880967142,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9580821394920349
+  },
+  {
+    "frame_time_ms": 1399.9826410415374,
+    "detected_text": "请问你喜欢吃汤面还是拌面?",
+    "confidence_score": 0.9499552249908447
+  },
+  {
+    "frame_time_ms": 1499.9814011159328,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9892282485961914
+  },
+  {
+    "frame_time_ms": 1599.9801611903285,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9852625131607056
+  },
+  {
+    "frame_time_ms": 1699.978921264724,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9788958430290222
+  },
+  {
+    "frame_time_ms": 1799.9776813391197,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9834976196289062
+  },
+  {
+    "frame_time_ms": 1899.9764414135152,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9815477728843689
+  },
+  {
+    "frame_time_ms": 1999.9752014879107,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9630265831947327
+  },
+  {
+    "frame_time_ms": 2099.973961562306,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9693242311477661
+  },
+  {
+    "frame_time_ms": 2199.972721636702,
+    "detected_text": "请问你喜欢吃汤面还是拌面?",
+    "confidence_score": 0.9575862884521484
+  },
+  {
+    "frame_time_ms": 2399.970241785493,
+    "detected_text": "我也选择不了啊",
+    "confidence_score": 0.9980287551879883
+  },
+  {
+    "frame_time_ms": 2499.9690018598885,
+    "detected_text": "我也选择不了啊",
+    "confidence_score": 0.9974047541618347
+  },
+  {
+    "frame_time_ms": 2599.967761934284,
+    "detected_text": "我也选择不了啊",
+    "confidence_score": 0.9955989718437195
+  },
+  {
+    "frame_time_ms": 2699.9665220086795,
+    "detected_text": "我也选择不了啊",
+    "confidence_score": 0.9979424476623535
+  },
+  {
+    "frame_time_ms": 2799.9652820830747,
+    "detected_text": "我也选择不了啊",
+    "confidence_score": 0.9981433749198914
+  },
+  {
+    "frame_time_ms": 2899.9640421574704,
+    "detected_text": "我也选择不了啊",
+    "confidence_score": 0.9966011047363281
+  },
+  {
+    "frame_time_ms": 2999.9628022318657,
+    "detected_text": "我也选择不了啊",
+    "confidence_score": 0.9985807538032532
+  },
+  {
+    "frame_time_ms": 3099.9615623062614,
+    "detected_text": "我也选择不了啊",
+    "confidence_score": 0.9975276589393616
+  },
+  {
+    "frame_time_ms": 3199.960322380657,
+    "detected_text": "我也选择不了啊",
+    "confidence_score": 0.9971885085105896
+  },
+  {
+    "frame_time_ms": 3299.959082455053,
+    "detected_text": "我也选择不了啊",
+    "confidence_score": 0.997896134853363
+  },
+  {
+    "frame_time_ms": 3399.957842529448,
+    "detected_text": "我也选择不了啊",
+    "confidence_score": 0.996876060962677
+  },
+  {
+    "frame_time_ms": 3499.9566026038437,
+    "detected_text": "我也选择不了啊",
+    "confidence_score": 0.9981264472007751
+  },
+  {
+    "frame_time_ms": 3599.9553626782395,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9591496586799622
+  },
+  {
+    "frame_time_ms": 3699.9541227526347,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9692661166191101
+  },
+  {
+    "frame_time_ms": 3799.9528828270304,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9791983962059021
+  },
+  {
+    "frame_time_ms": 3899.951642901426,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9961340427398682
+  },
+  {
+    "frame_time_ms": 3999.9504029758214,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9809345602989197
+  },
+  {
+    "frame_time_ms": 4099.949163050216,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9924333095550537
+  },
+  {
+    "frame_time_ms": 4199.947923124612,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9969112873077393
+  },
+  {
+    "frame_time_ms": 4299.946683199008,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.996641218662262
+  },
+  {
+    "frame_time_ms": 4399.945443273404,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9967813491821289
+  },
+  {
+    "frame_time_ms": 4499.944203347799,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9945730566978455
+  },
+  {
+    "frame_time_ms": 4599.942963422195,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9930021166801453
+  },
+  {
+    "frame_time_ms": 4699.94172349659,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9967812895774841
+  },
+  {
+    "frame_time_ms": 4799.940483570986,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9967085719108582
+  },
+  {
+    "frame_time_ms": 4899.939243645381,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9959822297096252
+  },
+  {
+    "frame_time_ms": 4999.938003719777,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9950434565544128
+  },
+  {
+    "frame_time_ms": 5099.936763794172,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9972501397132874
+  },
+  {
+    "frame_time_ms": 5199.935523868568,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9691815376281738
+  },
+  {
+    "frame_time_ms": 5299.934283942964,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9946795105934143
+  },
+  {
+    "frame_time_ms": 5399.933044017359,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9972731471061707
+  },
+  {
+    "frame_time_ms": 5499.931804091754,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9952403903007507
+  },
+  {
+    "frame_time_ms": 5599.930564166149,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9928041100502014
+  },
+  {
+    "frame_time_ms": 5699.929324240546,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9979992508888245
+  },
+  {
+    "frame_time_ms": 5799.928084314941,
+    "detected_text": "他们桌上剩什么我就吃什么",
+    "confidence_score": 0.9968471527099609
+  },
+  {
+    "frame_time_ms": 6199.923124612523,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9988272786140442
+  },
+  {
+    "frame_time_ms": 6299.921884686919,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9979796409606934
+  },
+  {
+    "frame_time_ms": 6399.920644761314,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9958420395851135
+  },
+  {
+    "frame_time_ms": 6499.91940483571,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9962021708488464
+  },
+  {
+    "frame_time_ms": 6599.918164910106,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9944926500320435
+  },
+  {
+    "frame_time_ms": 6699.916924984501,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9981168508529663
+  },
+  {
+    "frame_time_ms": 6799.915685058896,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9974766969680786
+  },
+  {
+    "frame_time_ms": 6899.914445133292,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9970515370368958
+  },
+  {
+    "frame_time_ms": 6999.9132052076875,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9970225691795349
+  },
+  {
+    "frame_time_ms": 7099.911965282084,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9950042963027954
+  },
+  {
+    "frame_time_ms": 7199.910725356479,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9957432746887207
+  },
+  {
+    "frame_time_ms": 7299.909485430873,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9953912496566772
+  },
+  {
+    "frame_time_ms": 7399.908245505269,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9968786835670471
+  },
+  {
+    "frame_time_ms": 7499.907005579665,
+    "detected_text": "有时候还吃不着",
+    "confidence_score": 0.9958946108818054
+  },
+  {
+    "frame_time_ms": 7899.902045877247,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.9981886148452759
+  },
+  {
+    "frame_time_ms": 7999.900805951643,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.998505711555481
+  },
+  {
+    "frame_time_ms": 8099.899566026039,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.9983903169631958
+  },
+  {
+    "frame_time_ms": 8199.898326100432,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.9979875087738037
+  },
+  {
+    "frame_time_ms": 8299.89708617483,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.9981179237365723
+  },
+  {
+    "frame_time_ms": 8399.895846249225,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.9980350136756897
+  },
+  {
+    "frame_time_ms": 8499.89460632362,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.997930645942688
+  },
+  {
+    "frame_time_ms": 8599.893366398015,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.9985463619232178
+  },
+  {
+    "frame_time_ms": 8699.892126472412,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.9987850189208984
+  },
+  {
+    "frame_time_ms": 8799.890886546807,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.9985651969909668
+  },
+  {
+    "frame_time_ms": 8899.889646621203,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.9986443519592285
+  },
+  {
+    "frame_time_ms": 8999.888406695598,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.9991878271102905
+  },
+  {
+    "frame_time_ms": 9099.887166769993,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.9992119073867798
+  },
+  {
+    "frame_time_ms": 9199.88592684439,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.9987998604774475
+  },
+  {
+    "frame_time_ms": 9299.884686918786,
+    "detected_text": "他们都给收走了呀",
+    "confidence_score": 0.9977498054504395
+  },
+  {
+    "frame_time_ms": 9699.879727216367,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9737717509269714
+  },
+  {
+    "frame_time_ms": 9799.878487290762,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9880639314651489
+  },
+  {
+    "frame_time_ms": 9899.877247365157,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9526128172874451
+  },
+  {
+    "frame_time_ms": 9999.876007439554,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9604880809783936
+  },
+  {
+    "frame_time_ms": 10099.87476751395,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9583579301834106
+  },
+  {
+    "frame_time_ms": 10199.873527588345,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9914687275886536
+  },
+  {
+    "frame_time_ms": 10299.87228766274,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9898552298545837
+  },
+  {
+    "frame_time_ms": 10399.871047737137,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9678035378456116
+  },
+  {
+    "frame_time_ms": 10499.869807811532,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9696187973022461
+  },
+  {
+    "frame_time_ms": 10599.868567885927,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9784449338912964
+  },
+  {
+    "frame_time_ms": 10699.86732796032,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9680405855178833
+  },
+  {
+    "frame_time_ms": 10799.866088034718,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9636189341545105
+  },
+  {
+    "frame_time_ms": 10899.864848109113,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9771957397460938
+  },
+  {
+    "frame_time_ms": 10999.863608183508,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9571928381919861
+  },
+  {
+    "frame_time_ms": 11099.862368257904,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9677006006240845
+  },
+  {
+    "frame_time_ms": 11199.861128332299,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9849614500999451
+  },
+  {
+    "frame_time_ms": 11299.859888406696,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9602518081665039
+  },
+  {
+    "frame_time_ms": 11399.858648481091,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9691811203956604
+  },
+  {
+    "frame_time_ms": 11499.857408555486,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9336060881614685
+  },
+  {
+    "frame_time_ms": 11599.856168629882,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9668754935264587
+  },
+  {
+    "frame_time_ms": 11699.854928704279,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9617499113082886
+  },
+  {
+    "frame_time_ms": 11799.853688778674,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9464948177337646
+  },
+  {
+    "frame_time_ms": 11899.85244885307,
+    "detected_text": "请问你喜欢吃汤面还是摔面？",
+    "confidence_score": 0.9329811334609985
+  },
+  {
+    "frame_time_ms": 11999.851208927463,
+    "detected_text": "请问你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9711771607398987
+  },
+  {
+    "frame_time_ms": 12199.848729076255,
+    "detected_text": "无所谓",
+    "confidence_score": 0.9991307258605957
+  },
+  {
+    "frame_time_ms": 12299.84748915065,
+    "detected_text": "无所谓",
+    "confidence_score": 0.9987727999687195
+  },
+  {
+    "frame_time_ms": 12399.846249225046,
+    "detected_text": "无所谓",
+    "confidence_score": 0.9965294003486633
+  },
+  {
+    "frame_time_ms": 12499.845009299443,
+    "detected_text": "无所谓",
+    "confidence_score": 0.9979644417762756
+  },
+  {
+    "frame_time_ms": 12599.843769373838,
+    "detected_text": "无所谓",
+    "confidence_score": 0.9986966252326965
+  },
+  {
+    "frame_time_ms": 12699.842529448233,
+    "detected_text": "无所谓",
+    "confidence_score": 0.9991582036018372
+  },
+  {
+    "frame_time_ms": 12799.841289522628,
+    "detected_text": "无所谓",
+    "confidence_score": 0.9985355734825134
+  },
+  {
+    "frame_time_ms": 12899.840049597024,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9977980852127075
+  },
+  {
+    "frame_time_ms": 12999.83880967142,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9973703026771545
+  },
+  {
+    "frame_time_ms": 13099.837569745816,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9980028867721558
+  },
+  {
+    "frame_time_ms": 13199.836329820211,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9983690977096558
+  },
+  {
+    "frame_time_ms": 13299.835089894605,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9982424974441528
+  },
+  {
+    "frame_time_ms": 13399.833849969002,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9987812042236328
+  },
+  {
+    "frame_time_ms": 13499.832610043397,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9983834028244019
+  },
+  {
+    "frame_time_ms": 13599.831370117792,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9976353049278259
+  },
+  {
+    "frame_time_ms": 13699.830130192187,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9978466033935547
+  },
+  {
+    "frame_time_ms": 13799.828890266584,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9972561597824097
+  },
+  {
+    "frame_time_ms": 13899.82765034098,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9987027049064636
+  },
+  {
+    "frame_time_ms": 13999.826410415375,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9989916682243347
+  },
+  {
+    "frame_time_ms": 14099.82517048977,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9983888268470764
+  },
+  {
+    "frame_time_ms": 14199.823930564167,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9989009499549866
+  },
+  {
+    "frame_time_ms": 14299.822690638563,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9988698959350586
+  },
+  {
+    "frame_time_ms": 14399.821450712958,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.997986376285553
+  },
+  {
+    "frame_time_ms": 14499.820210787351,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9991570711135864
+  },
+  {
+    "frame_time_ms": 14599.818970861746,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9973974227905273
+  },
+  {
+    "frame_time_ms": 14699.817730936144,
+    "detected_text": "只要是她做的都好吃",
+    "confidence_score": 0.9983637928962708
+  },
+  {
+    "frame_time_ms": 15499.80781153131,
+    "detected_text": "没有啦",
+    "confidence_score": 0.9654110074043274
+  },
+  {
+    "frame_time_ms": 15599.806571605704,
+    "detected_text": "没有啦",
+    "confidence_score": 0.9862391948699951
+  },
+  {
+    "frame_time_ms": 15699.8053316801,
+    "detected_text": "没有啦",
+    "confidence_score": 0.9748144745826721
+  },
+  {
+    "frame_time_ms": 15799.804091754493,
+    "detected_text": "没有啦",
+    "confidence_score": 0.9869106411933899
+  },
+  {
+    "frame_time_ms": 15899.80285182889,
+    "detected_text": "没有啦",
+    "confidence_score": 0.9955930709838867
+  },
+  {
+    "frame_time_ms": 15999.801611903285,
+    "detected_text": "没有啦",
+    "confidence_score": 0.9993247389793396
+  },
+  {
+    "frame_time_ms": 16099.800371977683,
+    "detected_text": "没有啦",
+    "confidence_score": 0.9997511506080627
+  },
+  {
+    "frame_time_ms": 16199.799132052078,
+    "detected_text": "没有啦",
+    "confidence_score": 0.9995479583740234
+  },
+  {
+    "frame_time_ms": 16299.797892126473,
+    "detected_text": "没有啦",
+    "confidence_score": 0.9991691708564758
+  },
+  {
+    "frame_time_ms": 16399.796652200865,
+    "detected_text": "没有啦",
+    "confidence_score": 0.9993863105773926
+  },
+  {
+    "frame_time_ms": 16499.795412275264,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9940676689147949
+  },
+  {
+    "frame_time_ms": 16599.79417234966,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9945012331008911
+  },
+  {
+    "frame_time_ms": 16699.792932424054,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9962214231491089
+  },
+  {
+    "frame_time_ms": 16799.79169249845,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9970617294311523
+  },
+  {
+    "frame_time_ms": 16899.790452572845,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9969090223312378
+  },
+  {
+    "frame_time_ms": 16999.78921264724,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.996562659740448
+  },
+  {
+    "frame_time_ms": 17099.787972721635,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9958712458610535
+  },
+  {
+    "frame_time_ms": 17199.78673279603,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9952574968338013
+  },
+  {
+    "frame_time_ms": 17299.785492870426,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9952085614204407
+  },
+  {
+    "frame_time_ms": 17399.784252944824,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9956716895103455
+  },
+  {
+    "frame_time_ms": 17499.78301301922,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9915720820426941
+  },
+  {
+    "frame_time_ms": 17599.781773093615,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9961195588111877
+  },
+  {
+    "frame_time_ms": 17699.78053316801,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9963682293891907
+  },
+  {
+    "frame_time_ms": 17799.779293242405,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9962347745895386
+  },
+  {
+    "frame_time_ms": 17899.7780533168,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9965894818305969
+  },
+  {
+    "frame_time_ms": 17999.776813391196,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9952313303947449
+  },
+  {
+    "frame_time_ms": 18099.77557346559,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9956924319267273
+  },
+  {
+    "frame_time_ms": 18199.774333539986,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9960909485816956
+  },
+  {
+    "frame_time_ms": 18299.773093614385,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9959308505058289
+  },
+  {
+    "frame_time_ms": 18399.77185368878,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9982654452323914
+  },
+  {
+    "frame_time_ms": 18499.770613763176,
+    "detected_text": "其实有的时候我做的也挺难吃的",
+    "confidence_score": 0.9967471957206726
+  },
+  {
+    "frame_time_ms": 18899.765654060753,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9970753192901611
+  },
+  {
+    "frame_time_ms": 18999.76441413515,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9964883327484131
+  },
+  {
+    "frame_time_ms": 19099.763174209547,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9968677759170532
+  },
+  {
+    "frame_time_ms": 19199.761934283943,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9975044131278992
+  },
+  {
+    "frame_time_ms": 19299.760694358338,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9973333477973938
+  },
+  {
+    "frame_time_ms": 19399.759454432733,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9975403547286987
+  },
+  {
+    "frame_time_ms": 19499.75821450713,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9969147443771362
+  },
+  {
+    "frame_time_ms": 19599.756974581524,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9984004497528076
+  },
+  {
+    "frame_time_ms": 19699.75573465592,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9977734684944153
+  },
+  {
+    "frame_time_ms": 19799.754494730314,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9978984594345093
+  },
+  {
+    "frame_time_ms": 19899.753254804713,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9978827238082886
+  },
+  {
+    "frame_time_ms": 19999.752014879108,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9978582859039307
+  },
+  {
+    "frame_time_ms": 20099.750774953503,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9964879751205444
+  },
+  {
+    "frame_time_ms": 20199.7495350279,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.997787594795227
+  },
+  {
+    "frame_time_ms": 20299.748295102294,
+    "detected_text": "有一回确实是难吃",
+    "confidence_score": 0.9962957501411438
+  },
+  {
+    "frame_time_ms": 21099.73837569746,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9974934458732605
+  },
+  {
+    "frame_time_ms": 21199.737135771855,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9958600997924805
+  },
+  {
+    "frame_time_ms": 21299.73589584625,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9951019883155823
+  },
+  {
+    "frame_time_ms": 21399.73465592064,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9963251948356628
+  },
+  {
+    "frame_time_ms": 21499.733415995037,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9955441355705261
+  },
+  {
+    "frame_time_ms": 21599.732176069436,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9916613698005676
+  },
+  {
+    "frame_time_ms": 21699.73093614383,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.996965229511261
+  },
+  {
+    "frame_time_ms": 21799.729696218226,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9980003833770752
+  },
+  {
+    "frame_time_ms": 21899.72845629262,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9984382390975952
+  },
+  {
+    "frame_time_ms": 21999.727216367017,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9980902671813965
+  },
+  {
+    "frame_time_ms": 22099.725976441412,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9973706007003784
+  },
+  {
+    "frame_time_ms": 22199.724736515807,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9984370470046997
+  },
+  {
+    "frame_time_ms": 22299.723496590203,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9982428550720215
+  },
+  {
+    "frame_time_ms": 22399.722256664598,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9974048137664795
+  },
+  {
+    "frame_time_ms": 22499.721016738997,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9972386360168457
+  },
+  {
+    "frame_time_ms": 22599.719776813392,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.99742192029953
+  },
+  {
+    "frame_time_ms": 22699.718536887787,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9967817068099976
+  },
+  {
+    "frame_time_ms": 22799.717296962182,
+    "detected_text": "你特么说什么呢你",
+    "confidence_score": 0.9971190690994263
+  },
+  {
+    "frame_time_ms": 23099.71357718537,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.95441073179245
+  },
+  {
+    "frame_time_ms": 23199.712337259763,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9570989012718201
+  },
+  {
+    "frame_time_ms": 23299.711097334162,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9713417291641235
+  },
+  {
+    "frame_time_ms": 23399.709857408558,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9724223613739014
+  },
+  {
+    "frame_time_ms": 23499.708617482953,
+    "detected_text": "你喜欢吃汤面还是拌面?",
+    "confidence_score": 0.9548342227935791
+  },
+  {
+    "frame_time_ms": 23599.707377557348,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9588978290557861
+  },
+  {
+    "frame_time_ms": 23699.706137631743,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9645183682441711
+  },
+  {
+    "frame_time_ms": 23799.70489770614,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9758081436157227
+  },
+  {
+    "frame_time_ms": 23899.703657780534,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9692122936248779
+  },
+  {
+    "frame_time_ms": 23999.702417854925,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9656460285186768
+  },
+  {
+    "frame_time_ms": 24099.70117792932,
+    "detected_text": "你喜欢吃汤面还是拌面?",
+    "confidence_score": 0.9517717361450195
+  },
+  {
+    "frame_time_ms": 24199.69993800372,
+    "detected_text": "你喜欢吃汤面还是拌面?",
+    "confidence_score": 0.953921914100647
+  },
+  {
+    "frame_time_ms": 24299.698698078115,
+    "detected_text": "你喜欢吃汤面还是拌面?",
+    "confidence_score": 0.9681989550590515
+  },
+  {
+    "frame_time_ms": 24399.69745815251,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9550552368164062
+  },
+  {
+    "frame_time_ms": 24499.696218226905,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9611729979515076
+  },
+  {
+    "frame_time_ms": 24599.6949783013,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.960170567035675
+  },
+  {
+    "frame_time_ms": 24699.693738375696,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9647522568702698
+  },
+  {
+    "frame_time_ms": 24799.69249845009,
+    "detected_text": "你喜欢吃汤面还是拌面？",
+    "confidence_score": 0.9586868286132812
+  },
+  {
+    "frame_time_ms": 24999.690018598885,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9985039234161377
+  },
+  {
+    "frame_time_ms": 25099.68877867328,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9987945556640625
+  },
+  {
+    "frame_time_ms": 25199.687538747676,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9984241127967834
+  },
+  {
+    "frame_time_ms": 25299.68629882207,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9984642863273621
+  },
+  {
+    "frame_time_ms": 25399.685058896466,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9980754256248474
+  },
+  {
+    "frame_time_ms": 25499.68381897086,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9990952014923096
+  },
+  {
+    "frame_time_ms": 25599.682579045257,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9982338547706604
+  },
+  {
+    "frame_time_ms": 25699.681339119652,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9967820048332214
+  },
+  {
+    "frame_time_ms": 25799.680099194047,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9987385272979736
+  },
+  {
+    "frame_time_ms": 25899.678859268446,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9894410371780396
+  },
+  {
+    "frame_time_ms": 25999.67761934284,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.993646502494812
+  },
+  {
+    "frame_time_ms": 26099.676379417237,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.980713427066803
+  },
+  {
+    "frame_time_ms": 26199.675139491632,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9966358542442322
+  },
+  {
+    "frame_time_ms": 26299.673899566027,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9957752227783203
+  },
+  {
+    "frame_time_ms": 26399.672659640422,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9963982701301575
+  },
+  {
+    "frame_time_ms": 26499.671419714814,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9976401925086975
+  },
+  {
+    "frame_time_ms": 26599.67017978921,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9984992146492004
+  },
+  {
+    "frame_time_ms": 26699.668939863608,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.996773362159729
+  },
+  {
+    "frame_time_ms": 26799.667699938003,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9987484812736511
+  },
+  {
+    "frame_time_ms": 26899.6664600124,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9989739060401917
+  },
+  {
+    "frame_time_ms": 26999.665220086794,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9986302852630615
+  },
+  {
+    "frame_time_ms": 27099.66398016119,
+    "detected_text": "每个人他都是口味都不太一样",
+    "confidence_score": 0.9990581274032593
+  },
+  {
+    "frame_time_ms": 27399.660260384375,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9960659146308899
+  },
+  {
+    "frame_time_ms": 27499.65902045877,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.99796062707901
+  },
+  {
+    "frame_time_ms": 27599.65778053317,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9987325668334961
+  },
+  {
+    "frame_time_ms": 27699.656540607564,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9968710541725159
+  },
+  {
+    "frame_time_ms": 27799.65530068196,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9975047707557678
+  },
+  {
+    "frame_time_ms": 27899.654060756355,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9983603954315186
+  },
+  {
+    "frame_time_ms": 27999.65282083075,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9969631433486938
+  },
+  {
+    "frame_time_ms": 28099.651580905145,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9978664517402649
+  },
+  {
+    "frame_time_ms": 28199.65034097954,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9980883002281189
+  },
+  {
+    "frame_time_ms": 28299.649101053936,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9983137249946594
+  },
+  {
+    "frame_time_ms": 28399.647861128335,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9969528317451477
+  },
+  {
+    "frame_time_ms": 28499.64662120273,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9969316124916077
+  },
+  {
+    "frame_time_ms": 28599.645381277125,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9971504807472229
+  },
+  {
+    "frame_time_ms": 28699.64414135152,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.998369038105011
+  },
+  {
+    "frame_time_ms": 28799.642901425916,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9977177977561951
+  },
+  {
+    "frame_time_ms": 28899.64166150031,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9983898401260376
+  },
+  {
+    "frame_time_ms": 28999.640421574702,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9970806241035461
+  },
+  {
+    "frame_time_ms": 29099.639181649098,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9972404837608337
+  },
+  {
+    "frame_time_ms": 29199.637941723493,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9982479214668274
+  },
+  {
+    "frame_time_ms": 29299.636701797892,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9979791045188904
+  },
+  {
+    "frame_time_ms": 29399.635461872287,
+    "detected_text": "就是属于那种公说公有理",
+    "confidence_score": 0.9965406060218811
+  },
+  {
+    "frame_time_ms": 29699.631742095473,
+    "detected_text": "母说母有理",
+    "confidence_score": 0.9976767301559448
+  },
+  {
+    "frame_time_ms": 29799.630502169868,
+    "detected_text": "母说母有理",
+    "confidence_score": 0.9989819526672363
+  },
+  {
+    "frame_time_ms": 29899.629262244263,
+    "detected_text": "母说母有理",
+    "confidence_score": 0.9993633031845093
+  },
+  {
+    "frame_time_ms": 29999.62802231866,
+    "detected_text": "母说母有理",
+    "confidence_score": 0.9995018839836121
+  },
+  {
+    "frame_time_ms": 30099.626782393058,
+    "detected_text": "母说母有理",
+    "confidence_score": 0.9993706941604614
+  },
+  {
+    "frame_time_ms": 30199.625542467453,
+    "detected_text": "母说母有理",
+    "confidence_score": 0.918954074382782
+  },
+  {
+    "frame_time_ms": 30299.624302541848,
+    "detected_text": "母说母有理",
+    "confidence_score": 0.9994413256645203
+  },
+  {
+    "frame_time_ms": 30399.623062616243,
+    "detected_text": "母说母有理",
+    "confidence_score": 0.9990533590316772
+  },
+  {
+    "frame_time_ms": 30499.62182269064,
+    "detected_text": "母说母有理",
+    "confidence_score": 0.9995877146720886
+  },
+  {
+    "frame_time_ms": 30599.620582765034,
+    "detected_text": "母说母有理",
+    "confidence_score": 0.9993260502815247
+  },
+  {
+    "frame_time_ms": 30699.61934283943,
+    "detected_text": "母说母有理",
+    "confidence_score": 0.9992253184318542
+  },
+  {
+    "frame_time_ms": 32399.598264104156,
+    "detected_text": "这都属于那种罗生门",
+    "confidence_score": 0.9977506995201111
+  },
+  {
+    "frame_time_ms": 32499.597024178547,
+    "detected_text": "这都属于那种罗生门",
+    "confidence_score": 0.9984924793243408
+  },
+  {
+    "frame_time_ms": 32599.595784252946,
+    "detected_text": "这都属于那种罗生门",
+    "confidence_score": 0.9987338185310364
+  },
+  {
+    "frame_time_ms": 32699.59454432734,
+    "detected_text": "这都属于那种罗生门",
+    "confidence_score": 0.9963339567184448
+  },
+  {
+    "frame_time_ms": 32799.59330440173,
+    "detected_text": "这都属于那种罗生门",
+    "confidence_score": 0.9934589862823486
+  },
+  {
+    "frame_time_ms": 32899.59206447613,
+    "detected_text": "这都属于那种罗生门",
+    "confidence_score": 0.9981542229652405
+  },
+  {
+    "frame_time_ms": 32999.59082455053,
+    "detected_text": "这都属于那种罗生门",
+    "confidence_score": 0.9974177479743958
+  },
+  {
+    "frame_time_ms": 33099.589584624926,
+    "detected_text": "这都属于那种罗生门",
+    "confidence_score": 0.9970177412033081
+  },
+  {
+    "frame_time_ms": 33199.58834469932,
+    "detected_text": "这都属于那种罗生门",
+    "confidence_score": 0.9949177503585815
+  },
+  {
+    "frame_time_ms": 33299.58710477372,
+    "detected_text": "这都属于那种罗生门",
+    "confidence_score": 0.9987609386444092
+  },
+  {
+    "frame_time_ms": 33399.58586484811,
+    "detected_text": "这都属于那种罗生门",
+    "confidence_score": 0.9992941617965698
+  },
+  {
+    "frame_time_ms": 33499.58462492251,
+    "detected_text": "这都属于那种罗生门",
+    "confidence_score": 0.9990050196647644
+  },
+  {
+    "frame_time_ms": 33599.5833849969,
+    "detected_text": "这都属于那种罗生门",
+    "confidence_score": 0.9986554384231567
+  },
+  {
+    "frame_time_ms": 34399.57346559206,
+    "detected_text": "（学小猫咪）",
+    "confidence_score": 0.9744923114776611
+  },
+  {
+    "frame_time_ms": 34499.57222566646,
+    "detected_text": "（学小猫咪）",
+    "confidence_score": 0.9739837646484375
+  },
+  {
+    "frame_time_ms": 34599.57098574085,
+    "detected_text": "（学小猫咪）",
+    "confidence_score": 0.9524062275886536
+  },
+  {
+    "frame_time_ms": 34699.56974581525,
+    "detected_text": "（学小猫咪）",
+    "confidence_score": 0.973200261592865
+  },
+  {
+    "frame_time_ms": 34799.56850588965,
+    "detected_text": "（学小猫咪",
+    "confidence_score": 0.9855642318725586
+  },
+  {
+    "frame_time_ms": 36299.549907005574,
+    "detected_text": "孙鹏你说说",
+    "confidence_score": 0.9910314679145813
+  },
+  {
+    "frame_time_ms": 36399.54866707997,
+    "detected_text": "孙鹏你说说",
+    "confidence_score": 0.9906520843505859
+  },
+  {
+    "frame_time_ms": 36499.54742715437,
+    "detected_text": "孙鹏你说说",
+    "confidence_score": 0.9915380477905273
+  },
+  {
+    "frame_time_ms": 36599.54618722877,
+    "detected_text": "孙鹏你说说",
+    "confidence_score": 0.9903748631477356
+  },
+  {
+    "frame_time_ms": 36699.54494730316,
+    "detected_text": "孙鹏你说说",
+    "confidence_score": 0.9879162907600403
+  },
+  {
+    "frame_time_ms": 36799.54370737756,
+    "detected_text": "孙鹏你说说",
+    "confidence_score": 0.9878924489021301
+  },
+  {
+    "frame_time_ms": 36899.54246745195,
+    "detected_text": "孙鹏你说说",
+    "confidence_score": 0.9922796487808228
+  },
+  {
+    "frame_time_ms": 36999.54122752635,
+    "detected_text": "孙鹏你说说",
+    "confidence_score": 0.9866059422492981
+  },
+  {
+    "frame_time_ms": 37399.53626782393,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.9983884692192078
+  },
+  {
+    "frame_time_ms": 37499.535027898324,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.9978183507919312
+  },
+  {
+    "frame_time_ms": 37599.53378797272,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.9978727102279663
+  },
+  {
+    "frame_time_ms": 37699.532548047115,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.9976887702941895
+  },
+  {
+    "frame_time_ms": 37799.531308121506,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.9976133108139038
+  },
+  {
+    "frame_time_ms": 37899.530068195905,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.9980432391166687
+  },
+  {
+    "frame_time_ms": 37999.5288282703,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.9990426301956177
+  },
+  {
+    "frame_time_ms": 38099.5275883447,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.998989462852478
+  },
+  {
+    "frame_time_ms": 38199.526348419095,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.9968476295471191
+  },
+  {
+    "frame_time_ms": 38299.52510849349,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.9978915452957153
+  },
+  {
+    "frame_time_ms": 38399.523868567885,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.9988974332809448
+  },
+  {
+    "frame_time_ms": 38499.522628642284,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.9965335726737976
+  },
+  {
+    "frame_time_ms": 38599.521388716676,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.998646080493927
+  },
+  {
+    "frame_time_ms": 38699.520148791074,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.9975185394287109
+  },
+  {
+    "frame_time_ms": 38799.518908865466,
+    "detected_text": "她又不会说",
+    "confidence_score": 0.9989527463912964
+  },
+  {
+    "frame_time_ms": 46099.42839429634,
+    "detected_text": "元",
+    "confidence_score": 0.8444313406944275
+  },
+  {
+    "frame_time_ms": 46199.42715437074,
+    "detected_text": "《元",
+    "confidence_score": 0.9108881950378418
+  },
+  {
+    "frame_time_ms": 46299.42591444513,
+    "detected_text": "《元",
+    "confidence_score": 0.9150471687316895
+  },
+  {
+    "frame_time_ms": 46399.42467451953,
+    "detected_text": "《元祖",
+    "confidence_score": 0.9641428589820862
+  },
+  {
+    "frame_time_ms": 46499.42343459392,
+    "detected_text": "《元祖",
+    "confidence_score": 0.9752572178840637
+  },
+  {
+    "frame_time_ms": 46599.422194668325,
+    "detected_text": "《元祖",
+    "confidence_score": 0.9738196730613708
+  },
+  {
+    "frame_time_ms": 46699.420954742716,
+    "detected_text": "《元祖",
+    "confidence_score": 0.984118640422821
+  },
+  {
+    "frame_time_ms": 46799.419714817115,
+    "detected_text": "《元祖",
+    "confidence_score": 0.9893332123756409
+  },
+  {
+    "frame_time_ms": 46899.41847489151,
+    "detected_text": "《元祖·肉",
+    "confidence_score": 0.9299951791763306
+  },
+  {
+    "frame_time_ms": 46999.417234965906,
+    "detected_text": "《元祖·肉",
+    "confidence_score": 0.9241239428520203
+  },
+  {
+    "frame_time_ms": 47099.4159950403,
+    "detected_text": "《元祖·肉艳",
+    "confidence_score": 0.9695699214935303
+  },
+  {
+    "frame_time_ms": 47199.414755114696,
+    "detected_text": "《元祖·肉艳",
+    "confidence_score": 0.9730066657066345
+  },
+  {
+    "frame_time_ms": 47299.41351518909,
+    "detected_text": "《元祖·肉艳",
+    "confidence_score": 0.949368417263031
+  },
+  {
+    "frame_time_ms": 47399.41227526349,
+    "detected_text": "《元祖·肉艳",
+    "confidence_score": 0.9438931345939636
+  },
+  {
+    "frame_time_ms": 47499.41103533788,
+    "detected_text": "《元祖·肉艳》",
+    "confidence_score": 0.9132199883460999
+  },
+  {
+    "frame_time_ms": 47599.40979541228,
+    "detected_text": "《元祖·肉艳》",
+    "confidence_score": 0.9366933107376099
+  },
+  {
+    "frame_time_ms": 47699.40855548667,
+    "detected_text": "《元祖·肉艳》",
+    "confidence_score": 0.9215098023414612
+  },
+  {
+    "frame_time_ms": 47799.40731556107,
+    "detected_text": "《元祖-肉艳》",
+    "confidence_score": 0.9109972715377808
+  },
+  {
+    "frame_time_ms": 47899.40607563546,
+    "detected_text": "《元祖·肉艳》",
+    "confidence_score": 0.9660243988037109
+  },
+  {
+    "frame_time_ms": 47999.40483570985,
+    "detected_text": "《元祖·肉艳》",
+    "confidence_score": 0.9174631237983704
+  },
+  {
+    "frame_time_ms": 48099.40359578425,
+    "detected_text": "《元祖·肉艳》",
+    "confidence_score": 0.9114753603935242
+  },
+  {
+    "frame_time_ms": 48199.40235585864,
+    "detected_text": "《元祖·肉艳》",
+    "confidence_score": 0.9358922243118286
+  },
+  {
+    "frame_time_ms": 48299.40111593305,
+    "detected_text": "《元祖·肉艳》",
+    "confidence_score": 0.9612151384353638
+  },
+  {
+    "frame_time_ms": 48399.39987600744,
+    "detected_text": "《元祖·肉艳》",
+    "confidence_score": 0.9734254479408264
+  },
+  {
+    "frame_time_ms": 48499.39863608184,
+    "detected_text": "《元祖·肉艳》",
+    "confidence_score": 0.9613925218582153
+  },
+  {
+    "frame_time_ms": 48599.39739615623,
+    "detected_text": "《元祖·肉艳",
+    "confidence_score": 0.9646003246307373
+  },
+  {
+    "frame_time_ms": 48699.39615623063,
+    "detected_text": "《元祖·肉艳",
+    "confidence_score": 0.9623901844024658
+  },
+  {
+    "frame_time_ms": 48799.39491630502,
+    "detected_text": "《元祖·肉艳",
+    "confidence_score": 0.961016833782196
+  },
+  {
+    "frame_time_ms": 48899.39367637942,
+    "detected_text": "《元祖·肉艳",
+    "confidence_score": 0.9616864323616028
+  },
+  {
+    "frame_time_ms": 48999.39243645381,
+    "detected_text": "《元祖·肉艳",
+    "confidence_score": 0.9679937958717346
+  },
+  {
+    "frame_time_ms": 49099.39119652821,
+    "detected_text": "《元祖·肉艳",
+    "confidence_score": 0.9720112681388855
+  },
+  {
+    "frame_time_ms": 49199.3899566026,
+    "detected_text": "《元祖·肉艳",
+    "confidence_score": 0.9726532101631165
+  },
+  {
+    "frame_time_ms": 49299.388716677,
+    "detected_text": "《元祖·肉艳》",
+    "confidence_score": 0.9801961183547974
+  },
+  {
+    "frame_time_ms": 49399.38747675139,
+    "detected_text": "《元祖·肉艳》",
+    "confidence_score": 0.9804343581199646
+  },
+  {
+    "frame_time_ms": 49499.38623682579,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9977160692214966
+  },
+  {
+    "frame_time_ms": 49599.38499690018,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9985859990119934
+  },
+  {
+    "frame_time_ms": 49699.38375697458,
+    "detected_text": "限文DEC27.88",
+    "confidence_score": 0.7645686864852905
+  },
+  {
+    "frame_time_ms": 49799.38251704897,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9984965324401855
+  },
+  {
+    "frame_time_ms": 49899.38127712337,
+    "detected_text": "化低文全DEC27.88",
+    "confidence_score": 0.8382616639137268
+  },
+  {
+    "frame_time_ms": 49999.38003719777,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9983447790145874
+  },
+  {
+    "frame_time_ms": 50099.37879727217,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9984029531478882
+  },
+  {
+    "frame_time_ms": 50199.37755734656,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9987816214561462
+  },
+  {
+    "frame_time_ms": 50299.37631742096,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9981307983398438
+  },
+  {
+    "frame_time_ms": 50399.37507749535,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9983262419700623
+  },
+  {
+    "frame_time_ms": 50499.37383756974,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9980486035346985
+  },
+  {
+    "frame_time_ms": 50599.37259764414,
+    "detected_text": "DEC-27.88",
+    "confidence_score": 0.9966560006141663
+  },
+  {
+    "frame_time_ms": 50699.37135771853,
+    "detected_text": "X1RX生DEC 27.88",
+    "confidence_score": 0.758501797914505
+  },
+  {
+    "frame_time_ms": 50799.37011779293,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9835233688354492
+  },
+  {
+    "frame_time_ms": 50899.368877867324,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9989725351333618
+  },
+  {
+    "frame_time_ms": 50999.36763794172,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9983811974525452
+  },
+  {
+    "frame_time_ms": 51099.366398016115,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9982403516769409
+  },
+  {
+    "frame_time_ms": 51199.36515809051,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9979228377342224
+  },
+  {
+    "frame_time_ms": 51299.363918164905,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9986296892166138
+  },
+  {
+    "frame_time_ms": 51399.362678239304,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9982315301895142
+  },
+  {
+    "frame_time_ms": 51499.361438313696,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9980016946792603
+  },
+  {
+    "frame_time_ms": 51599.360198388094,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9977495670318604
+  },
+  {
+    "frame_time_ms": 51699.35895846249,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9974873065948486
+  },
+  {
+    "frame_time_ms": 51799.35771853689,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9985661506652832
+  },
+  {
+    "frame_time_ms": 51899.356478611284,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9979395866394043
+  },
+  {
+    "frame_time_ms": 51999.35523868568,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9979303479194641
+  },
+  {
+    "frame_time_ms": 52099.353998760074,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.997961163520813
+  },
+  {
+    "frame_time_ms": 52199.35275883447,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9978864192962646
+  },
+  {
+    "frame_time_ms": 52299.351518908865,
+    "detected_text": "DEC_27.88",
+    "confidence_score": 0.9435263872146606
+  },
+  {
+    "frame_time_ms": 52399.350278983264,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9980873465538025
+  },
+  {
+    "frame_time_ms": 52499.349039057655,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9976398944854736
+  },
+  {
+    "frame_time_ms": 52599.347799132054,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9980217218399048
+  },
+  {
+    "frame_time_ms": 52699.346559206446,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9939528703689575
+  },
+  {
+    "frame_time_ms": 52799.345319280845,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9984649419784546
+  },
+  {
+    "frame_time_ms": 52899.344079355236,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.99839186668396
+  },
+  {
+    "frame_time_ms": 52999.34283942963,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9977264404296875
+  },
+  {
+    "frame_time_ms": 53099.34159950403,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9983591437339783
+  },
+  {
+    "frame_time_ms": 53199.34035957842,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9980709552764893
+  },
+  {
+    "frame_time_ms": 53299.33911965282,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9984071850776672
+  },
+  {
+    "frame_time_ms": 53399.337879727216,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9987486600875854
+  },
+  {
+    "frame_time_ms": 53499.336639801615,
+    "detected_text": "DEC-27.88",
+    "confidence_score": 0.9934114813804626
+  },
+  {
+    "frame_time_ms": 53599.33539987601,
+    "detected_text": "DEC27.88",
+    "confidence_score": 0.9982814788818359
+  },
+  {
+    "frame_time_ms": 53699.334159950406,
+    "detected_text": "DEC.27.88",
+    "confidence_score": 0.9757710695266724
+  }
+]

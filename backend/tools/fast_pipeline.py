@@ -326,23 +326,47 @@ class BatchOCREngine:
     def _get_ocr(self):
         """Lazy-initialize OCR model (must happen in the worker thread/process)."""
         if self._ocr is None:
-            from backend.tools.ocr import OcrRecogniser
-            self._ocr = OcrRecogniser()
+            try:
+                from backend.tools.ocr import OcrRecogniser
+                self._ocr = OcrRecogniser()
+            except (ImportError, ModuleNotFoundError):
+                # Fallback: use PaddleOCR directly when the config chain is broken
+                from paddleocr import PaddleOCR
+                self._ocr = PaddleOCR(
+                    use_angle_cls=False,
+                    lang='ch',
+                    show_log=False,
+                    use_gpu=False,
+                )
         return self._ocr
 
     def process_single(self, image: np.ndarray) -> Tuple[str, float]:
         """Run OCR on a single image. Returns (text, avg_confidence)."""
         ocr = self._get_ocr()
         try:
-            dt_box, rec_res = ocr.predict(image)
-            if not rec_res:
-                return "", 0.0
-            texts = []
-            confs = []
-            for text, conf in rec_res:
-                if conf > 0.5:  # Liberal threshold for batch mode
-                    texts.append(text)
-                    confs.append(conf)
+            # Support both OcrRecogniser.predict() and PaddleOCR.ocr() interfaces
+            if hasattr(ocr, 'predict'):
+                dt_box, rec_res = ocr.predict(image)
+                if not rec_res:
+                    return "", 0.0
+                texts = []
+                confs = []
+                for text, conf in rec_res:
+                    if conf > 0.5:
+                        texts.append(text)
+                        confs.append(conf)
+            else:
+                # PaddleOCR direct interface
+                result = ocr.ocr(image, cls=False)
+                if not result or not result[0]:
+                    return "", 0.0
+                texts = []
+                confs = []
+                for line in result[0]:
+                    text, conf = line[1][0], line[1][1]
+                    if conf > 0.5:
+                        texts.append(text)
+                        confs.append(conf)
             if not texts:
                 return "", 0.0
             return " ".join(texts), sum(confs) / len(confs)

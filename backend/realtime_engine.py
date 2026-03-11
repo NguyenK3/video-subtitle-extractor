@@ -118,7 +118,7 @@ class EngineMetrics:
 
     @property
     def skip_rate(self) -> float:
-        total = self.scene_skips + self.diff_skips + self.cache_hits
+        total = self.diff_skips + self.cache_hits
         return total / max(self.sampled_frames, 1) * 100
 
     @property
@@ -205,8 +205,8 @@ class _SceneChangeDetector:
 class _FrameDiffFilter:
     """Template-matching based frame difference filter. ~0.5ms per frame.
 
-    Replaces the previous dhash + MAD + SSIM triple check (~50ms total).
     Uses normalized cross-correlation on a 160×40 canonical resize.
+    Focuses comparison on center text band to ignore background motion.
     """
 
     def __init__(self, threshold: float = 0.98):
@@ -219,7 +219,12 @@ class _FrameDiffFilter:
     def has_changed(self, region: np.ndarray) -> bool:
         if region is None or region.size == 0:
             return False
-        small = cv2.resize(region, (160, 40))
+        # Focus on center 60% height (text band) to ignore background motion
+        h = region.shape[0]
+        y_start = int(h * 0.2)
+        y_end = int(h * 0.8)
+        text_band = region[y_start:y_end]
+        small = cv2.resize(text_band, (160, 40))
         gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY) if len(small.shape) == 3 else small
         if self._prev_gray is None:
             self._prev_gray = gray
@@ -264,7 +269,7 @@ class _SmartSampler:
     """Adaptive frame sampling: 3 fps base, 6 fps when subtitle activity detected."""
 
     def __init__(self, video_fps: float, base_fps: float = 3.0,
-                 active_fps: float = 6.0, cooldown: int = 30):
+                 active_fps: float = 6.0, cooldown: int = 10):
         self.video_fps = max(video_fps, 1.0)
         self.base_fps = base_fps
         self.active_fps = active_fps
@@ -314,9 +319,9 @@ class RealtimeSubtitleEngine:
         video_path,
         lang="ch",
         mode="fast",
-        default_interval_sec=0.8,
-        min_interval_sec=0.2,
-        max_interval_sec=1.2,
+        default_interval_sec=2.5,
+        min_interval_sec=1.0,
+        max_interval_sec=4.0,
         batch_size=8,
         # Legacy params (ignored, kept for API compat)
         hash_threshold=6,
@@ -330,7 +335,8 @@ class RealtimeSubtitleEngine:
 
         # Map interval params to sample fps
         self._base_sample_fps = 1.0 / max(default_interval_sec, 0.1)
-        self._active_sample_fps = 1.0 / max(min_interval_sec, 0.1)
+        # FIX: active_fps must be HIGHER than base_fps (was inverted)
+        self._active_sample_fps = max(self._base_sample_fps * 1.5, 4.5)
 
         self.metrics = EngineMetrics()
         self.stop_event = threading.Event()
@@ -341,17 +347,27 @@ class RealtimeSubtitleEngine:
         self.result_q: queue.Queue = queue.Queue(maxsize=128)
 
         # Filter components
-        self._scene_detector = _SceneChangeDetector(threshold=0.92)
-        self._diff_filter = _FrameDiffFilter(threshold=0.98)
+        self._scene_detector = _SceneChangeDetector(threshold=0.70)
+        self._diff_filter = _FrameDiffFilter(threshold=0.92)
         self._text_cache = _TextCache(max_size=4096)
 
         # Subtitle region (auto-detected on first frame)
         self._subtitle_bbox = None
 
+        # Forced periodic OCR to catch text changes the diff filter misses
+        self._last_ocr_time_ms = 0.0
+        self._forced_ocr_interval_ms = 1000.0
+
+        # Burst mode: after scene change, force OCR for next N ms
+        self._burst_until_ms = 0.0
+        self._burst_duration_ms = 600.0
+
         # Aggregator state
         self.timeline: List[dict] = []
         self._last_event = None
-        self._dedup_threshold = 0.75
+        self._dedup_threshold = 0.85
+        self._max_subtitle_duration_ms = 3000.0
+        self._disappear_timeout_sec = 0.7
 
         # GUI-compatible attributes
         self.progress_total = 0
@@ -397,11 +413,13 @@ class RealtimeSubtitleEngine:
         thr = max(8.0, float(np.percentile(row_energy, 80)))
         rows = np.where(row_energy >= thr)[0]
         if len(rows) == 0:
-            return int(h * 0.70), int(h * 0.98), int(w * 0.03), int(w * 0.97)
+            return int(h * 0.45), int(h * 0.98), int(w * 0.03), int(w * 0.97)
         y1 = int(h * 0.45) + max(0, int(rows.min()) - 20)
         y2 = int(h * 0.45) + min(lower.shape[0] - 1, int(rows.max()) + 35)
         x1 = int(w * 0.03)
         x2 = int(w * 0.97)
+        # Ensure generous region: at least from 50% of frame height
+        y1 = min(y1, int(h * 0.50))
         y1 = max(0, min(y1, h - 2))
         y2 = max(y1 + 1, min(y2, h - 1))
         return y1, y2, x1, x2
@@ -429,14 +447,18 @@ class RealtimeSubtitleEngine:
         frame_no = 0
         try:
             while not self.stop_event.is_set():
-                ok, frame = cap.read()
-                if not ok:
-                    break
                 frame_no += 1
                 self.metrics.inc("decoded_frames")
 
                 if not self._sampler.should_sample(frame_no):
+                    # grab() skips decoding — ~10x faster than read()
+                    if not cap.grab():
+                        break
                     continue
+
+                ok, frame = cap.read()
+                if not ok:
+                    break
 
                 # Auto-detect subtitle region on first sampled frame
                 if self._subtitle_bbox is None:
@@ -472,7 +494,7 @@ class RealtimeSubtitleEngine:
     # Thread 2: Scene Change + Frame Diff + Hash Cache
     # ------------------------------------------------------------------
     def _filter_loop(self):
-        t0 = time.time()
+        filter_cpu_time = 0.0
 
         while not self.stop_event.is_set():
             pkt = self.decode_q.get()
@@ -480,27 +502,31 @@ class RealtimeSubtitleEngine:
                 self.ocr_q.put(None)
                 break
 
+            t_start = time.time()
             crop = pkt.subtitle_crop
 
             # 1. Scene change detection (histogram, ~0.3ms)
             same_scene = self._scene_detector.is_same_scene(crop)
+            if not same_scene:
+                self.metrics.inc("scene_skips")
+                self._diff_filter.reset()  # Force fresh comparison after scene change
+                # Activate burst mode: force OCR for next 1.5s after scene change
+                self._burst_until_ms = pkt.time_ms + self._burst_duration_ms
+
+            # Check if forced periodic OCR is needed or burst mode active
+            in_burst = pkt.time_ms <= self._burst_until_ms
+            force_ocr = in_burst or (pkt.time_ms - self._last_ocr_time_ms) >= self._forced_ocr_interval_ms
 
             # 2. Frame difference filter (template matching, ~0.5ms)
-            if same_scene and not self._diff_filter.has_changed(crop):
+            diff_changed = self._diff_filter.has_changed(crop)
+            if not diff_changed and not force_ocr:
                 self.metrics.inc("diff_skips")
-                # Propagate last known text to aggregator
-                if self._last_known_text:
-                    self.result_q.put(OCRResult(
-                        pkt.frame_no, pkt.time_ms,
-                        self._last_known_text, 1.0,
-                    ))
+                filter_cpu_time += time.time() - t_start
+                # Do NOT propagate stale text — let aggregator
+                # detect gaps via timeout to properly finalize
                 if self._sampler:
                     self._sampler.notify_found() if self._last_known_text else self._sampler.notify_empty()
                 continue
-
-            if not same_scene:
-                self._diff_filter.reset()
-                self.metrics.inc("scene_skips")
 
             # 3. Perceptual hash cache lookup (~0.2ms)
             region_hash = self._text_cache.compute_hash(crop)
@@ -509,21 +535,41 @@ class RealtimeSubtitleEngine:
                 text, conf = cached
                 self.metrics.inc("cache_hits")
                 self._last_known_text = text
-                if text:
-                    self.result_q.put(OCRResult(pkt.frame_no, pkt.time_ms, text, conf))
+                self._last_ocr_time_ms = pkt.time_ms
+                filter_cpu_time += time.time() - t_start
+                # Send both text and empty results so aggregator can detect disappearance
+                self.result_q.put(OCRResult(pkt.frame_no, pkt.time_ms, text, conf))
                 if self._sampler:
                     self._sampler.notify_found() if text else self._sampler.notify_empty()
                 continue
 
+            # 3b. Quick text presence check — skip OCR if region is blank (~0.3ms)
+            gray_check = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY) if len(crop.shape) == 3 else crop
+            edges = cv2.Canny(gray_check, 80, 180)
+            edge_energy = float(edges.mean())
+            if edge_energy < 1.5:
+                # Blank region — no text to OCR
+                self._text_cache.put(region_hash, "", 0.0)
+                self._last_known_text = ""
+                self._last_ocr_time_ms = pkt.time_ms
+                self.result_q.put(OCRResult(pkt.frame_no, pkt.time_ms, "", 0.0))
+                self.metrics.inc("diff_skips")
+                filter_cpu_time += time.time() - t_start
+                if self._sampler:
+                    self._sampler.notify_empty()
+                continue
+
             # 4. Needs OCR — pass raw crop (NO preprocessing!)
+            self._last_ocr_time_ms = pkt.time_ms
             self.ocr_q.put(OCRItem(
                 frame_no=pkt.frame_no,
                 time_ms=pkt.time_ms,
                 crop=crop,
                 region_hash=region_hash,
             ))
+            filter_cpu_time += time.time() - t_start
 
-        self.metrics.filter_time = time.time() - t0
+        self.metrics.filter_time = filter_cpu_time
 
     # ------------------------------------------------------------------
     # Thread 3: OCR Worker (zero preprocessing, raw crop → PaddleOCR)
@@ -541,13 +587,19 @@ class RealtimeSubtitleEngine:
                 return
             for item in batch:
                 try:
-                    # Direct OCR on raw crop — no upscale, no denoise, no threshold
-                    dt_box, rec_res = recogniser.predict(item.crop)
+                    # Resize large crops for faster OCR inference
+                    crop = item.crop
+                    h_c, w_c = crop.shape[:2]
+                    if w_c > 320:
+                        scale = 320.0 / w_c
+                        crop = cv2.resize(crop, (320, max(1, int(h_c * scale))))
+                    # Direct OCR on crop — no upscale, no denoise, no threshold
+                    dt_box, rec_res = recogniser.predict(crop)
                     texts = []
                     confs = []
                     if rec_res:
                         for text, conf in rec_res:
-                            if conf > 0.5 and text and text.strip():
+                            if conf > 0.3 and text and text.strip():
                                 texts.append(text.strip())
                                 confs.append(conf)
                     text = " ".join(texts) if texts else ""
@@ -557,8 +609,9 @@ class RealtimeSubtitleEngine:
                     self._text_cache.put(item.region_hash, text, avg_conf)
                     self._last_known_text = text
 
+                    # Always send result (including empty) so aggregator detects disappearance
+                    self.result_q.put(OCRResult(item.frame_no, item.time_ms, text, avg_conf))
                     if text:
-                        self.result_q.put(OCRResult(item.frame_no, item.time_ms, text, avg_conf))
                         if self._sampler:
                             self._sampler.notify_found()
                     else:
@@ -587,12 +640,21 @@ class RealtimeSubtitleEngine:
     # Thread 4: Aggregator (deduplication + temporal tracking)
     # ------------------------------------------------------------------
     def _aggregator_loop(self):
-        min_gap_ms = 300
+        min_gap_ms = 200
 
         while not self.stop_event.is_set():
-            result = self.result_q.get()
+            try:
+                result = self.result_q.get(timeout=self._disappear_timeout_sec)
+            except queue.Empty:
+                # No OCR result for timeout period — subtitle disappeared
+                if self._last_event is not None:
+                    self.timeline.append(self._last_event)
+                    self.gui_results.append(self._last_event["text"])
+                    self._last_event = None
+                continue
+
             if result is None:
-                # Flush last event
+                # Pipeline done — flush last event
                 if self._last_event is not None:
                     self.timeline.append(self._last_event)
                     self.gui_results.append(self._last_event["text"])
@@ -600,9 +662,26 @@ class RealtimeSubtitleEngine:
 
             txt = (result.text or "").strip()
             if not txt:
+                # Empty OCR result — subtitle disappeared from frame
+                if self._last_event is not None:
+                    self.timeline.append(self._last_event)
+                    self.gui_results.append(self._last_event["text"])
+                    self._last_event = None
                 continue
 
             if self._last_event is None:
+                self._last_event = {
+                    "start_ms": result.time_ms,
+                    "end_ms": result.time_ms,
+                    "text": txt,
+                }
+                continue
+
+            # Max subtitle duration — force finalize to prevent mega-merges
+            duration = result.time_ms - self._last_event["start_ms"]
+            if duration > self._max_subtitle_duration_ms:
+                self.timeline.append(self._last_event)
+                self.gui_results.append(self._last_event["text"])
                 self._last_event = {
                     "start_ms": result.time_ms,
                     "end_ms": result.time_ms,
