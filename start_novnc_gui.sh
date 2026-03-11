@@ -19,6 +19,12 @@ for cmd in Xvfb x11vnc websockify xdpyinfo; do
   fi
 done
 
+# Install a lightweight window manager if none is available.
+if ! command -v openbox >/dev/null 2>&1; then
+  echo "Installing openbox window manager …"
+  sudo apt-get update -qq && sudo apt-get install -y -qq openbox >/dev/null 2>&1
+fi
+
 if [[ "$DISPLAY_NUM" == "auto" ]]; then
   for n in $(seq 99 140); do
     if [[ ! -e "/tmp/.X11-unix/X${n}" ]] && [[ ! -e "/tmp/.X${n}-lock" ]]; then
@@ -43,6 +49,7 @@ cleanup() {
   [[ -f "$STATE_DIR/novnc.pid" ]] && kill "$(cat "$STATE_DIR/novnc.pid")" 2>/dev/null || true
   [[ -f "$STATE_DIR/vnc.pid" ]] && kill "$(cat "$STATE_DIR/vnc.pid")" 2>/dev/null || true
   [[ -f "$STATE_DIR/gui.pid" ]] && kill "$(cat "$STATE_DIR/gui.pid")" 2>/dev/null || true
+  [[ -f "$STATE_DIR/wm.pid" ]] && kill "$(cat "$STATE_DIR/wm.pid")" 2>/dev/null || true
   [[ -f "$STATE_DIR/xvfb.pid" ]] && kill "$(cat "$STATE_DIR/xvfb.pid")" 2>/dev/null || true
   rm -f "$STATE_DIR"/*.pid
 }
@@ -69,6 +76,13 @@ if ! xdpyinfo -display "$DISPLAY" >/dev/null 2>&1; then
   exit 1
 fi
 
+# Start a lightweight window manager so GUI windows are properly positioned.
+if command -v openbox >/dev/null 2>&1; then
+  openbox >"$STATE_DIR/wm.log" 2>&1 &
+  echo $! >"$STATE_DIR/wm.pid"
+  sleep 0.3
+fi
+
 python "$ROOT_DIR/gui.py" >"$STATE_DIR/gui.log" 2>&1 &
 echo $! >"$STATE_DIR/gui.pid"
 
@@ -90,7 +104,8 @@ websockify --web="$WEB_ROOT" "$NOVNC_PORT" "localhost:$VNC_PORT" >"$STATE_DIR/no
 echo $! >"$STATE_DIR/novnc.pid"
 
 echo "noVNC is running."
-echo "Open: http://localhost:${NOVNC_PORT}/vnc.html"
+echo "Open: http://localhost:${NOVNC_PORT}/vse-viewer.html?autoconnect=true&reconnect=true"
+echo "Legacy viewer: http://localhost:${NOVNC_PORT}/vnc.html?autoconnect=true&reconnect=true&resize=scale"
 echo "DISPLAY: ${DISPLAY}"
 echo "If using Codespaces/remote container, forward port ${NOVNC_PORT} first."
 echo "Logs: $STATE_DIR"

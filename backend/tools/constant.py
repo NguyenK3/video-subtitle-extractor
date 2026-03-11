@@ -1,20 +1,20 @@
 from enum import Enum
 
 
-# 默认字幕出现的大致区域
+# Default approximate region where subtitles appear
 class SubtitleArea(Enum):
-    # 字幕区域出现在下半部分
+    # Subtitle area appears in the lower part
     LOWER_PART = 0
-    # 字幕区域出现在上半部分
+    # Subtitle area appears in the upper part
     UPPER_PART = 1
-    # 不知道字幕区域可能出现的位置
+    # Unknown subtitle area position
     UNKNOWN = 2
-    # 明确知道字幕区域出现的位置
+    # Custom subtitle area position
     CUSTOM = 3
 
 
 class BackgroundColor(Enum):
-    # 字幕背景
+    # Subtitle background
     WHITE = 0
     DARK = 1
     UNKNOWN = 2

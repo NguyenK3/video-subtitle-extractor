@@ -3,7 +3,7 @@
 @author: eritpchy
 @file  : reformat.py
 @time  : 2021/12/17 15:43
-@desc  : 将连起来的英文单词切分
+@desc  : Split concatenated English words
 """
 import json
 import os
@@ -49,7 +49,7 @@ def execute(path, lang='en'):
             text = re.sub(re.compile(k, re.I), v, text)
         return text
 
-    # 逆向过滤seg
+    # Reverse filter seg
     def remove_invalid_segment(seg, text):
         seg_len = len(seg)
         span = None
@@ -83,9 +83,9 @@ def execute(path, lang='en'):
             seg = wordsegment.segment(re.sub(re.compile(f"(\ni)([^\\s])", re.I), "\\1 \\2", sub.text))
         seg = format_seg_list(seg)
 
-        # 替换中文前的多个空格成单个空格, 避免中英文分行出错
+        # Replace multiple spaces before Chinese characters with a single space to avoid line-breaking errors
         sub.text = re.sub(' +([\\u4e00-\\u9fa5])', ' \\1', sub.text)
-        # 中英文分行
+        # Split Chinese and English into separate lines
         if lang in ["ch", "ch_tra"]:
             sub.text = sub.text.replace("  ", "\n")
         lines = []
@@ -115,32 +115,32 @@ def execute(path, lang='en'):
             ss = remain
         # again
         ss = typo_fix(ss)
-        # 非大写字母的大写字母前加空格
+        # Add space before uppercase letters not preceded by uppercase letters
         ss = re.sub("([^\\sA-Z\\-])([A-Z])", "\\1 \\2", ss)
-        # 删除重复空格
+        # Remove duplicate spaces
         ss = ss.replace("  ", " ")
         ss = ss.replace("。", ".")
-        # 删除,?!,前的多个空格
+        # Remove multiple spaces before .,?!,
         ss = re.sub(" *([\\.\\?\\!\\,])", "\\1", ss)
-        # 删除'的前后多个空格
+        # Remove spaces around apostrophes
         ss = re.sub(" *([\\']) *", "\\1", ss)
-        # 删除换行后的多个空格, 通常时第二行的开始的多个空格
+        # Remove spaces after newlines, usually at the beginning of the second line
         ss = re.sub('\n\\s*', '\n', ss)
-        # 删除开始的多个空格
+        # Remove leading spaces
         ss = re.sub('^\\s*', '', ss)
-        # 删除-左侧空格
+        # Remove space to the left of hyphens
         ss = re.sub("([A-Za-z0-9]) (\\-[A-Za-z0-9])", '\\1\\2', ss)
-        # 删除%左侧空格
+        # Remove space to the left of %
         ss = re.sub("([A-Za-z0-9]) %", '\\1%', ss)
-        # 结尾·改成.
+        # Replace trailing · with .
         ss = re.sub('·$', '.', ss)
-        # 移除Dr.后的空格
+        # Remove space after Dr.
         ss = re.sub(r'\bDr\. *\b', "Dr.", ss)
-        # 中文引号转英文
+        # Convert Chinese quotation marks to English
         ss = re.sub(r'[“”]', "\"", ss)
-        # 中文逗号转英文
+        # Convert Chinese commas to English
         ss = re.sub(r'，', ",", ss)
-        # .,?后面加空格
+        # Add space after .,!,?
         ss = re.sub('([\\.,\\!\\?])([A-Za-z0-9\\u4e00-\\u9fa5])', '\\1 \\2', ss)
         ss = ss.replace("\n\n", "\n")
         sub.text = ss.strip()

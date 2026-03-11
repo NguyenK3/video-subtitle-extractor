@@ -12,14 +12,14 @@ def main():
     SAVE_PATH = os.path.join(os.path.dirname(WORK_DIR), 'vse_out')
     ICON_PATH = os.path.join(WORK_DIR, "design", "vse.ico")
 
-    # 解析命令行参数
-    parser = argparse.ArgumentParser(description="打包程序")
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Build distribution package")
     parser.add_argument(
         "--cuda",
-        nargs="?",                # 可选参数值
-        const="10.2",             # 如果只写 --cuda，默认值是 10.2
-        default=None,             # 不写 --cuda，则为 None
-        help="是否包含CUDA模块，可指定版本，如 --cuda 或 --cuda=11.8"
+        nargs="?",                # Optional argument value
+        const="10.2",             # Default value is 10.2 if only --cuda is specified
+        default=None,             # If --cuda is not specified, defaults to None
+        help="Include CUDA module, optionally specify version, e.g. --cuda or --cuda=11.8"
     )
 
     args = parser.parse_args()

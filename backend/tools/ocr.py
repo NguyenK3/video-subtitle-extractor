@@ -3,10 +3,10 @@ import config
 import importlib
 from paddleocr import PaddleOCR
 
-# 加载文本检测+识别模型
+# Load text detection + recognition model
 class OcrRecogniser:
     def __init__(self):
-        # 获取参数对象
+        # Get parameter object
         importlib.reload(config)
         self.recogniser = self.init_model()
 
@@ -36,7 +36,7 @@ class OcrRecogniser:
                     ymax = min(y3, y4)
                     coordinate_list.append([xmin, xmax, ymin, ymax])
 
-            # 计算有多少行字幕，将每行字幕最小的ymin值放入lines
+            # Calculate how many subtitle lines there are, put the minimum ymin of each line into lines
             lines = []
             for i in coordinate_list:
                 if len(lines) < 1:
@@ -60,13 +60,13 @@ class OcrRecogniser:
                 for i in to_rank_res:
                     if i[0][2] == line:
                         tmp_list.append(i)
-                # 先根据纵坐标排序
+                # First sort by vertical coordinate
                 for k in range(1, len(tmp_list)):
                     for j in range(0, len(tmp_list) - k):
                         if tmp_list[j][0][2] > tmp_list[j + 1][0][2]:
                             print(tmp_list[j][0][2])
                             tmp_list[j], tmp_list[j + 1] = tmp_list[j + 1], tmp_list[j]
-                # 再根据横坐标排列
+                # Then sort by horizontal coordinate
                 for l in range(1, len(tmp_list)):
                     for j in range(0, len(tmp_list) - l):
                         if tmp_list[j][0][0] > tmp_list[j + 1][0][0]:
@@ -85,12 +85,12 @@ class OcrRecogniser:
         return PaddleOCR(use_gpu=config.USE_GPU,
                          gpu_mem=500,
                          det_algorithm='DB',
-                         # 设置文本检测模型路径
+                         # Set text detection model path
                          det_model_dir=self.convertToOnnxModelIfNeeded(config.DET_MODEL_PATH),
                          rec_algorithm='CRNN',
-                         # 设置每张图文本框批处理数量
+                         # Set text box batch processing size per image
                          rec_batch_num=config.REC_BATCH_NUM,
-                         # 设置文本识别模型路径
+                         # Set text recognition model path
                          rec_model_dir=self.convertToOnnxModelIfNeeded(config.REC_MODEL_PATH),
                          max_batch_size=config.MAX_BATCH_SIZE,
                          det=True,
@@ -152,9 +152,9 @@ class OcrRecogniser:
 
 def get_coordinates(dt_box):
     """
-    从返回的检测框中获取坐标
-    :param dt_box 检测框返回结果
-    :return list 坐标点列表
+    Get coordinates from returned detection boxes
+    :param dt_box Detection box results
+    :return list List of coordinate points
     """
     coordinate_list = list()
     if isinstance(dt_box, list):

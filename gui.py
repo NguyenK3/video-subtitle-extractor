@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 @Author  : Fang Yao
-@Time    : 2021/4/1 6:07 下午
+@Time    : 2021/4/1 6:07 PM
 @FileName: gui.py
-@desc: 字幕提取器图形化界面
+@desc: Subtitle Extractor GUI
 """
 import backend.main
+from backend.realtime_engine import RealtimeSubtitleEngine
 import os
 import configparser
 import PySimpleGUI as sg
@@ -22,16 +23,16 @@ class SubtitleExtractorGUI:
         self.config = configparser.ConfigParser()
         self.interface_config = configparser.ConfigParser()
         if not os.path.exists(self.config_file):
-            # 如果没有配置文件，默认弹出语言选择界面
+            # If no config file exists, show language selection dialog by default
             LanguageModeGUI(self).run()
         self.INTERFACE_KEY_NAME_MAP = {
-            '简体中文': 'ch',
-            '繁體中文': 'chinese_cht',
             'English': 'en',
-            '한국어': 'ko',
-            '日本語': 'japan',
-            'Tiếng Việt': 'vi',
-            'Español': 'es'
+            'Simplified Chinese': 'ch',
+            'Traditional Chinese': 'chinese_cht',
+            'Korean': 'ko',
+            'Japanese': 'japan',
+            'Vietnamese': 'vi',
+            'Spanish': 'es'
         }
         self.config.read(self.config_file, encoding='utf-8')
         self.interface_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend', 'interface',
@@ -39,7 +40,7 @@ class SubtitleExtractorGUI:
         self.interface_config.read(self.interface_file, encoding='utf-8')
 
     def __init__(self):
-        # 初次运行检查运行环境是否正常
+        # Check runtime environment on first launch
         from paddle import utils
         utils.run_check()
         self.font = ('DejaVu Sans', 10)
@@ -49,34 +50,41 @@ class SubtitleExtractorGUI:
         self.icon = os.path.join(os.path.dirname(__file__), 'design', 'vse.ico')
         self._load_config()
         self.screen_width, self.screen_height = sg.Window.get_screen_size()
-        # 设置视频预览区域大小
-        self.video_preview_width = min(1120, max(720, int(self.screen_width * 0.62)))
-        self.video_preview_height = self.video_preview_width * 9 // 16
-        self.sidebar_width = min(420, max(320, int(self.screen_width * 0.30)))
+        # Clamp usable area to leave room for WM decorations / taskbars
+        usable_w = int(self.screen_width * 0.92)
+        usable_h = int(self.screen_height * 0.92)
+        # Set video preview area size — keep total window within the screen
+        self.video_preview_width = min(1120, max(720, int(usable_w * 0.62)))
+        # Reserve ~600px for timeline, logs, results, and other controls
+        max_preview_h = max(280, usable_h - 600)
+        self.video_preview_height = min(self.video_preview_width * 9 // 16, max_preview_h)
+        self.sidebar_width = min(420, max(320, int(usable_w * 0.30)))
         self.progressbar_size = (42, 18)
-        # 字幕提取器布局
+        # Subtitle extractor layout
         self.layout = None
-        # 字幕提取其窗口
+        # Subtitle extractor window
         self.window = None
-        # 视频路径
+        # Video path
         self.video_path = None
-        # 视频cap
+        # Video capture
         self.video_cap = None
-        # 视频的帧率
+        # Video frame rate
         self.fps = None
-        # 视频的帧数
+        # Video frame count
         self.frame_count = None
-        # 视频的宽
+        # Video width
         self.frame_width = None
-        # 视频的高
+        # Video height
         self.frame_height = None
-        # 设置字幕区域高宽
+        # Subtitle region bounds
         self.xmin = None
         self.xmax = None
         self.ymin = None
         self.ymax = None
-        # 字幕提取器
+        # Subtitle extractor
         self.se = None
+        self.realtime_engine = None
+        self._rt_last_result_idx = 0
         self.video_paths = []
         self.current_frame_no = 1
         self.current_frame = None
@@ -185,39 +193,40 @@ class SubtitleExtractorGUI:
 
     def run(self):
         print(self.interface_config['Main']['GPUWarning'])
-        # 创建布局
+        # Create layout
         self._create_layout()
-        # 创建窗口
+        # Create window
         self.window = sg.Window(title=self.interface_config['SubtitleExtractorGUI']['Title'] + " v" + backend.main.config.VERSION, layout=self.layout,
-                                icon=self.icon, finalize=True, resizable=True)
+                                icon=self.icon, finalize=True, resizable=True,
+                                location=(0, 0))
         while True:
-            # 循环读取事件
+            # Read events in loop
             event, values = self.window.read(timeout=80)
             self.filter_level = values.get('-LOG-FILTER-', 'ALL')
-            # 处理【打开】事件
+            # Handle [Open] event
             self._file_event_handler(event, values)
-            # 处理【滑动】事件
+            # Handle [Slider] event
             self._slide_event_handler(event, values)
-            # 处理【识别语言】事件
+            # Handle [Language] event
             self._language_mode_event_handler(event)
-            # 处理【运行】事件
+            # Handle [Run] event
             self._run_event_handler(event, values)
-            # 处理播放控制
+            # Handle playback controls
             self._playback_event_handler(event, values)
             self._refresh_status(values)
-            # 如果关闭软件，退出
+            # Exit if window closed
             if event == sg.WIN_CLOSED:
                 break
-            # 更新进度条
+            # Update progress bar
             if self.se is not None:
                 self.window['-PROG-'].update(self.se.progress_total)
                 if self.se.isFinished:
-                    # 1) 打开修改字幕滑块区域按钮
+                    # 1) Re-enable subtitle region sliders
                     self.window['-Y-SLIDER-'].update(disabled=False)
                     self.window['-X-SLIDER-'].update(disabled=False)
                     self.window['-Y-SLIDER-H-'].update(disabled=False)
                     self.window['-X-SLIDER-W-'].update(disabled=False)
-                    # 2) 打开【运行】、【打开】和【识别语言】按钮
+                    # 2) Re-enable [Run], [Open] and [Language] buttons
                     self.window['-RUN-'].update(disabled=False)
                     self.window['-FILE-'].update(disabled=False)
                     self.window['-FILE_BTN-'].update(disabled=False)
@@ -229,16 +238,43 @@ class SubtitleExtractorGUI:
                     self._refresh_subtitle_preview()
                     self.se = None
                 if len(self.video_paths) >= 1:
-                    # 1) 关闭修改字幕滑块区域按钮
+                    # 1) Disable subtitle region sliders
                     self.window['-Y-SLIDER-'].update(disabled=True)
                     self.window['-X-SLIDER-'].update(disabled=True)
                     self.window['-Y-SLIDER-H-'].update(disabled=True)
                     self.window['-X-SLIDER-W-'].update(disabled=True)
-                    # 2) 关闭【运行】、【打开】和【识别语言】按钮
+                    # 2) Disable [Run], [Open] and [Language] buttons
                     self.window['-RUN-'].update(disabled=True)
                     self.window['-FILE-'].update(disabled=True)
                     self.window['-FILE_BTN-'].update(disabled=True)
                     self.window['-LANGUAGE-MODE-'].update(disabled=True)
+            # Update realtime subtitle engine progress
+            if self.realtime_engine is not None:
+                self.window['-PROG-'].update(self.realtime_engine.progress_total)
+                # Stream new OCR results to the results panel
+                new_results = self.realtime_engine.gui_results[self._rt_last_result_idx:]
+                for txt in new_results:
+                    # Skip if identical to the last displayed subtitle
+                    if not hasattr(self, '_rt_last_displayed') or txt != self._rt_last_displayed:
+                        self.window['-RESULTS-'].print(f'[REALTIME] {txt}')
+                        self._rt_last_displayed = txt
+                self._rt_last_result_idx += len(new_results)
+                if self.realtime_engine.isFinished:
+                    # Show performance metrics
+                    m = self.realtime_engine.metrics
+                    self._log(
+                        f'Realtime extraction finished: {m.unique_subtitles} subtitles, '
+                        f'{m.ocr_calls} OCR calls ({m.skip_rate:.0f}% skipped), '
+                        f'{m.total_time:.1f}s total'
+                    )
+                    # Re-enable controls
+                    for k in ('-Y-SLIDER-', '-X-SLIDER-', '-Y-SLIDER-H-', '-X-SLIDER-W-',
+                              '-RUN-', '-FILE-', '-FILE_BTN-', '-LANGUAGE-MODE-',
+                              '-PLAY-', '-PAUSE-', '-PREV-', '-NEXT-'):
+                        self.window[k].update(disabled=False)
+                    self.realtime_engine = None
+                    self._rt_last_result_idx = 0
+                    self._rt_last_displayed = None
         if self.video_cap is not None:
             self.video_cap.release()
 
@@ -273,10 +309,11 @@ class SubtitleExtractorGUI:
         self.window['-FILE_BTN-'].Update(self.interface_config['SubtitleExtractorGUI']['Open'])
         self.window['-RUN-'].Update(self.interface_config['SubtitleExtractorGUI']['Run'])
         self.window['-LANGUAGE-MODE-'].Update(self.interface_config['SubtitleExtractorGUI']['Setting'])
+        self.window['-REALTIME-'].Update(text=self.interface_config['SubtitleExtractorGUI'].get('RealtimeMode', 'Realtime Mode'))
 
     def _create_layout(self):
         """
-        创建字幕提取器布局
+        Create subtitle extractor layout.
         """
         garbage = os.path.join(os.path.dirname(__file__), 'output')
         if os.path.exists(garbage):
@@ -339,6 +376,10 @@ class SubtitleExtractorGUI:
                 sg.Slider(range=(60, 95), default_value=80, orientation='h', size=(24, 16),
                           key='-SENS-SLIDER-', disable_number_display=False,
                           trough_color='#3a3a3a', background_color='#252526')
+            ], [
+                sg.Checkbox(self.interface_config['SubtitleExtractorGUI'].get('RealtimeMode', 'Realtime Mode'),
+                            default=False, key='-REALTIME-', text_color='#e0e0e0', background_color='#252526',
+                            font=self.font)
             ]], background_color='#252526', relief=sg.RELIEF_SOLID, border_width=1, pad=(6, 8))],
             [sg.Frame('Subtitle Bounding Box', [[
                 sg.Text(self.interface_config['SubtitleExtractorGUI']['Vertical'], background_color='#252526', text_color='#e0e0e0'),
@@ -370,9 +411,9 @@ class SubtitleExtractorGUI:
 
     def _file_event_handler(self, event, values):
         """
-        当点击打开按钮时：
-        1）打开视频文件，将画布显示视频帧
-        2）获取视频信息，初始化进度条滑块范围
+        When the Open button is clicked:
+        1) Open video file and display frame on canvas
+        2) Get video info and initialize slider ranges
         """
         if event == '-FILE-' or event == '-OPEN-BTN-':
             if event == '-OPEN-BTN-':
@@ -401,48 +442,48 @@ class SubtitleExtractorGUI:
                 if ret:
                     for video in self.video_paths:
                         self._log(f"{self.interface_config['SubtitleExtractorGUI']['OpenVideoSuccess']}：{video}")
-                    # 获取视频的帧数
+                    # Get video frame count
                     self.frame_count = self.video_cap.get(cv2.CAP_PROP_FRAME_COUNT)
-                    # 获取视频的高度
+                    # Get video height
                     self.frame_height = self.video_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-                    # 获取视频的宽度
+                    # Get video width
                     self.frame_width = self.video_cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-                    # 获取视频的帧率
+                    # Get video frame rate
                     self.fps = self.video_cap.get(cv2.CAP_PROP_FPS)
                     self.current_frame_no = 1
                     self._log_frame_activity('Decoded', self.current_frame_no, force=True)
                     self._log(f'Video metadata: {int(self.frame_width)}x{int(self.frame_height)}, {self.frame_count:.0f} frames, {self.fps:.2f} FPS')
-                    # 调整视频帧大小，使播放器能够显示
+                    # Resize frame to fit player display
                     resized_frame = self._img_resize(frame)
                     # resized_frame = cv2.resize(src=frame, dsize=(self.video_preview_width, self.video_preview_height))
-                    # 显示视频帧
+                    # Display video frame
                     self.window['-DISPLAY-'].update(data=cv2.imencode('.png', resized_frame)[1].tobytes())
                     self._log_frame_activity('Drawn', self.current_frame_no, force=True)
-                    # 更新视频进度条滑块range
+                    # Update video progress slider range
                     self.window['-SLIDER-'].update(range=(1, self.frame_count))
                     self.window['-SLIDER-'].update(1)
-                    # 预设字幕区域位置
+                    # Preset subtitle region position
                     y_p, h_p, x_p, w_p = self.parse_subtitle_config()
                     y = self.frame_height * y_p
                     h = self.frame_height * h_p
                     x = self.frame_width * x_p
                     w = self.frame_width * w_p
-                    # 更新视频字幕位置滑块range
-                    # 更新Y-SLIDER范围
+                    # Update subtitle position slider ranges
+                    # Update Y-SLIDER range
                     self.window['-Y-SLIDER-'].update(range=(0, self.frame_height), disabled=False)
-                    # 更新Y-SLIDER默认值
+                    # Update Y-SLIDER default value
                     self.window['-Y-SLIDER-'].update(y)
-                    # 更新X-SLIDER范围
+                    # Update X-SLIDER range
                     self.window['-X-SLIDER-'].update(range=(0, self.frame_width), disabled=False)
-                    # 更新X-SLIDER默认值
+                    # Update X-SLIDER default value
                     self.window['-X-SLIDER-'].update(x)
-                    # 更新Y-SLIDER-H范围
+                    # Update Y-SLIDER-H range
                     self.window['-Y-SLIDER-H-'].update(range=(0, self.frame_height - y))
-                    # 更新Y-SLIDER-H默认值
+                    # Update Y-SLIDER-H default value
                     self.window['-Y-SLIDER-H-'].update(h)
-                    # 更新X-SLIDER-W范围
+                    # Update X-SLIDER-W range
                     self.window['-X-SLIDER-W-'].update(range=(0, self.frame_width - x))
-                    # 更新X-SLIDER-W默认值
+                    # Update X-SLIDER-W default value
                     self.window['-X-SLIDER-W-'].update(w)
                     self.preview_text = 'Detected subtitle preview: --'
                     self._update_preview(frame, (y, h, x, w))
@@ -453,31 +494,34 @@ class SubtitleExtractorGUI:
         if event != '-LANGUAGE-MODE-':
             return
         if 'OK' == LanguageModeGUI(self).run():
-            # 重新加载config
+            # Reload config
             pass
 
     def _run_event_handler(self, event, values):
         """
-        当点击运行按钮时：
-        1) 禁止修改字幕滑块区域
-        2) 禁止再次点击【运行】和【打开】按钮
-        3) 设定字幕区域位置
+        When the Run button is clicked:
+        1) Disable subtitle region sliders
+        2) Disable [Run] and [Open] buttons
+        3) Set subtitle region position
         """
         if event == '-RUN-':
+            if values.get('-REALTIME-', False):
+                self._run_realtime(values)
+                return
             if self.video_cap is None:
                 print(self.interface_config['SubtitleExtractorGUI']['OpenVideoFirst'])
             else:
-                # 1) 禁止修改字幕滑块区域
+                # 1) Disable subtitle region sliders
                 self.window['-Y-SLIDER-'].update(disabled=True)
                 self.window['-X-SLIDER-'].update(disabled=True)
                 self.window['-Y-SLIDER-H-'].update(disabled=True)
                 self.window['-X-SLIDER-W-'].update(disabled=True)
-                # 2) 禁止再次点击【运行】、【打开】和【识别语言】按钮
+                # 2) Disable [Run], [Open] and [Language] buttons
                 self.window['-RUN-'].update(disabled=True)
                 self.window['-FILE-'].update(disabled=True)
                 self.window['-FILE_BTN-'].update(disabled=True)
                 self.window['-LANGUAGE-MODE-'].update(disabled=True)
-                # 3) 设定字幕区域位置
+                # 3) Set subtitle region position
                 self.xmin = int(values['-X-SLIDER-'])
                 self.xmax = int(values['-X-SLIDER-'] + values['-X-SLIDER-W-'])
                 self.ymin = int(values['-Y-SLIDER-'])
@@ -499,17 +543,46 @@ class SubtitleExtractorGUI:
                         video_path = self.video_paths.pop()
                         self._log(f'Processing: {video_path}')
                         self.se = backend.main.SubtitleExtractor(video_path, subtitle_area)
-                        self.se.run()
+                        self.se.run_fast()
                 Thread(target=task, daemon=True).start()
                 self.video_cap.release()
                 self.video_cap = None
                 self.is_playing = False
 
+    def _run_realtime(self, values):
+        """Launch RealtimeSubtitleEngine for the loaded video."""
+        if self.video_cap is None:
+            print(self.interface_config['SubtitleExtractorGUI']['OpenVideoFirst'])
+            return
+        # Disable controls
+        for k in ('-Y-SLIDER-', '-X-SLIDER-', '-Y-SLIDER-H-', '-X-SLIDER-W-',
+                  '-RUN-', '-FILE-', '-FILE_BTN-', '-LANGUAGE-MODE-'):
+            self.window[k].update(disabled=True)
+
+        lang = self.config['DEFAULT']['Language']
+        mode = self.config['DEFAULT']['Mode']
+        sample = float(values.get('-SAMPLING-SLIDER-', 3)) / 3.0 * 0.8  # map 1-10 slider to interval
+        sample = max(0.15, min(sample, 2.0))
+
+        self._log(f'Starting Realtime Subtitle Engine (lang={lang}, mode={mode}, sample={sample:.2f}s)')
+
+        self.realtime_engine = RealtimeSubtitleEngine(
+            video_path=self.video_path,
+            lang=lang,
+            mode=mode,
+            default_interval_sec=sample,
+        )
+        self._rt_last_result_idx = 0
+        self.realtime_engine.run_async()
+        self.video_cap.release()
+        self.video_cap = None
+        self.is_playing = False
+
     def _slide_event_handler(self, event, values):
         """
-        当滑动视频进度条/滑动字幕选择区域滑块时：
-        1) 判断视频是否存在，如果存在则显示对应的视频帧
-        2) 绘制rectangle
+        When the video progress bar / subtitle region sliders are moved:
+        1) Check if video exists, if so display the corresponding frame
+        2) Draw the subtitle bounding rectangle
         """
         if event == '-SLIDER-' or event == '-Y-SLIDER-' or event == '-Y-SLIDER-H-' or event == '-X-SLIDER-' or event \
                 == '-X-SLIDER-W-':
@@ -521,7 +594,7 @@ class SubtitleExtractorGUI:
                     self._log_frame_activity('Decoded', frame_no)
                     self.window['-Y-SLIDER-H-'].update(range=(0, self.frame_height-values['-Y-SLIDER-']))
                     self.window['-X-SLIDER-W-'].update(range=(0, self.frame_width-values['-X-SLIDER-']))
-                    # 画字幕框
+                    # Draw subtitle bounding box
                     y = int(values['-Y-SLIDER-'])
                     h = int(values['-Y-SLIDER-H-'])
                     x = int(values['-X-SLIDER-'])
@@ -560,16 +633,16 @@ class SubtitleExtractorGUI:
 
     def _update_preview(self, frame, y_h_x_w):
         y, h, x, w = y_h_x_w
-        # 画字幕框
+        # Draw subtitle bounding box
         overlay = frame.copy()
         cv2.rectangle(img=overlay, pt1=(int(x), int(y)), pt2=(int(x) + int(w), int(y) + int(h)),
                       color=(76, 175, 80), thickness=2)
         cv2.putText(overlay, 'Subtitle Detection Box', (int(x) + 6, max(20, int(y) - 10)),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, (224, 224, 224), 2, cv2.LINE_AA)
         draw = cv2.addWeighted(overlay, 0.92, frame, 0.08, 0)
-        # 调整视频帧大小，使播放器能够显示
+        # Resize frame to fit player display
         resized_frame = self._img_resize(draw)
-        # 显示视频帧
+        # Display video frame
         self.window['-DISPLAY-'].update(data=cv2.imencode('.png', resized_frame)[1].tobytes())
         self._log_frame_activity('Drawn', self.current_frame_no)
 
@@ -577,21 +650,21 @@ class SubtitleExtractorGUI:
     def _img_resize(self, image):
         top, bottom, left, right = (0, 0, 0, 0)
         height, width = image.shape[0], image.shape[1]
-        # 对长短不想等的图片，找到最长的一边
+        # Find the longest edge of the image
         longest_edge = height
-        # 计算短边需要增加多少像素宽度使其与长边等长
+        # Calculate padding needed to make the short edge equal to the long edge
         if width < longest_edge:
             dw = longest_edge - width
             left = dw // 2
             right = dw - left
         else:
             pass
-        # 给图像增加边界
+        # Add border to the image
         constant = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0, 0, 0])
         return cv2.resize(constant, (self.video_preview_width, self.video_preview_height))
 
     def set_subtitle_config(self, y, h, x, w):
-        # 写入配置文件
+        # Write config file
         with open(self.subtitle_config_file, mode='w', encoding='utf-8') as f:
             f.write('[AREA]\n')
             f.write(f'Y = {y}\n')
@@ -601,7 +674,7 @@ class SubtitleExtractorGUI:
 
     def parse_subtitle_config(self):
         y_p, h_p, x_p, w_p = .78, .21, .05, .9
-        # 如果配置文件不存在，则写入配置文件
+        # If config file does not exist, write default config
         if not os.path.exists(self.subtitle_config_file):
             self.set_subtitle_config(y_p, h_p, x_p, w_p)
             return y_p, h_p, x_p, w_p
@@ -621,47 +694,47 @@ class LanguageModeGUI:
         self.subtitle_extractor_gui = subtitle_extractor_gui
         self.icon = os.path.join(os.path.dirname(__file__), 'design', 'vse.ico')
         self.config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'settings.ini')
-        # 设置界面
-        self.INTERFACE_DEF = '简体中文'
+        # Interface settings
+        self.INTERFACE_DEF = 'English'
         if not os.path.exists(self.config_file):
             self.interface_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend', 'interface',
-                                               "ch.ini")
+                                               "en.ini")
         self.interface_config = configparser.ConfigParser()
-        # 设置语言
+        # Language settings
         self.INTERFACE_KEY_NAME_MAP = {
-            '简体中文': 'ch',
-            '繁體中文': 'chinese_cht',
             'English': 'en',
-            '한국어': 'ko',
-            '日本語': 'japan',
-            'Tiếng Việt': 'vi',
-            'Español': 'es'
+            'Simplified Chinese': 'ch',
+            'Traditional Chinese': 'chinese_cht',
+            'Korean': 'ko',
+            'Japanese': 'japan',
+            'Vietnamese': 'vi',
+            'Spanish': 'es'
         }
-        # 设置语言
+        # Language defaults
         self.LANGUAGE_DEF = 'ch'
         self.LANGUAGE_NAME_KEY_MAP = None
         self.LANGUAGE_KEY_NAME_MAP = None
         self.MODE_DEF = 'fast'
         self.MODE_NAME_KEY_MAP = None
         self.MODE_KEY_NAME_MAP = None
-        # 语言选择布局
+        # Language selection layout
         self.layout = None
-        # 语言选择窗口
+        # Language selection window
         self.window = None
 
     def run(self):
-        # 创建布局
+        # Create layout
         title = self._create_layout()
-        # 创建窗口
+        # Create window
         self.window = sg.Window(title=title, layout=self.layout, icon=self.icon)
         while True:
-            # 循环读取事件
+            # Read events in loop
             event, values = self.window.read(timeout=10)
-            # 处理【OK】事件
+            # Handle [OK] event
             self._ok_event_handler(event, values)
-            # 处理【切换界面语言】事件
+            # Handle [Switch interface language] event
             self._interface_event_handler(event, values)
-            # 如果关闭软件，退出
+            # Exit if window closed
             if event == sg.WIN_CLOSED:
                 if os.path.exists(self.config_file):
                     break
@@ -677,7 +750,7 @@ class LanguageModeGUI:
     def _load_interface_text(self):
         self.interface_config.read(self.interface_file, encoding='utf-8')
         config_language_mode_gui = self.interface_config["LanguageModeGUI"]
-        # 设置界面
+        # Set interface default
         self.INTERFACE_DEF = config_language_mode_gui["InterfaceDefault"]
 
         self.LANGUAGE_DEF = config_language_mode_gui["LanguageCH"]
@@ -696,49 +769,49 @@ class LanguageModeGUI:
 
     def _create_layout(self):
         interface_def, language_def, mode_def = self.parse_config(self.config_file)
-        # 加载界面文本
+        # Load interface text
         self._load_interface_text()
         choose_language_text = self.interface_config["LanguageModeGUI"]["InterfaceLanguage"]
         choose_sub_lang_text = self.interface_config["LanguageModeGUI"]["SubtitleLanguage"]
         choose_mode_text = self.interface_config["LanguageModeGUI"]["Mode"]
         self.layout = [
-            # 显示选择界面语言
+            # Interface language selector
             [sg.Text(choose_language_text),
              sg.DropDown(values=list(self.INTERFACE_KEY_NAME_MAP.keys()), size=(30, 20),
                          pad=(0, 20),
                          key='-INTERFACE-', readonly=True,
                          default_value=interface_def),
              sg.OK(key='-INTERFACE-OK-')],
-            # 显示选择字幕语言
+            # Subtitle language selector
             [sg.Text(choose_sub_lang_text),
              sg.DropDown(values=list(self.LANGUAGE_NAME_KEY_MAP.keys()), size=(30, 20),
                          pad=(0, 20),
                          key='-LANGUAGE-', readonly=True, default_value=language_def)],
-            # 显示识别模式
+            # Recognition mode selector
             [sg.Text(choose_mode_text),
              sg.DropDown(values=list(self.MODE_NAME_KEY_MAP.keys()), size=(30, 20), pad=(0, 20),
                          key='-MODE-', readonly=True, default_value=mode_def)],
-            # 显示确认关闭按钮
+            # OK and Cancel buttons
             [sg.OK(), sg.Cancel()]
         ]
         return self.interface_config["LanguageModeGUI"]["Title"]
 
     def _ok_event_handler(self, event, values):
         if event == 'OK':
-            # 设置模型语言配置
+            # Set model language configuration
             interface = None
             language = None
             mode = None
-            # 设置界面语言
+            # Set interface language
             interface_str = values['-INTERFACE-']
             if interface_str in self.INTERFACE_KEY_NAME_MAP:
                 interface = interface_str
             language_str = values['-LANGUAGE-']
-            # 设置字幕语言
+            # Set subtitle language
             print(self.interface_config["LanguageModeGUI"]["SubtitleLanguage"], language_str)
             if language_str in self.LANGUAGE_NAME_KEY_MAP:
                 language = self.LANGUAGE_NAME_KEY_MAP[language_str]
-            # 设置模型语言配置
+            # Set recognition mode
             mode_str = values['-MODE-']
             print(self.interface_config["LanguageModeGUI"]["Mode"], mode_str)
             if mode_str in self.MODE_NAME_KEY_MAP:
@@ -764,7 +837,7 @@ class LanguageModeGUI:
 
     @staticmethod
     def set_config(config_file, interface, language_code, mode):
-        # 写入配置文件
+        # Write config file
         with open(config_file, mode='w', encoding='utf-8') as f:
             f.write('[DEFAULT]\n')
             f.write(f'Interface = {interface}\n')
@@ -797,7 +870,7 @@ class LanguageModeGUI:
 if __name__ == '__main__':
     try:
         multiprocessing.set_start_method("spawn")
-        # 运行图形化界面
+        # Launch GUI
         subtitleExtractorGUI = SubtitleExtractorGUI()
         subtitleExtractorGUI.run()
     except Exception as e:

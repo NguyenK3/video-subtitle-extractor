@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>VSE Remote Desktop</title>
+    <link rel="stylesheet" href="custom-fonts.css">
+    <link rel="stylesheet" href="vse-viewer.css">
+</head>
+<body>
+
+    <!-- RFB canvas container — RFB inserts its own DOM here -->
+    <div id="noVNC_container"></div>
+
+    <!-- Connection state overlay -->
+    <div id="vse_conn_overlay" class="vse_state_ready">
+        <div class="vse_spinner"></div>
+        <div class="vse_label">Remote Desktop Viewer</div>
+        <div class="vse_sublabel">Click to connect to the VNC server</div>
+        <button id="vse_connect_btn" class="vse_btn vse_btn_connect">Connect</button>
+        <button id="vse_reconnect_btn" class="vse_btn vse_btn_reconnect">Reconnect</button>
+        <button id="vse_retry_btn" class="vse_btn vse_btn_retry">Retry</button>
+        <button id="vse_cancel_btn" class="vse_btn vse_btn_cancel">Cancel</button>
+    </div>
+
+    <!-- Toolbar trigger zone (top edge of screen) -->
+    <div id="vse_toolbar_trigger">
+        <div id="vse_toolbar">
+            <button id="vse_fullscreen_btn" class="vse_toolbar_btn" title="Toggle Fullscreen">&#x26F6; Fullscreen</button>
+            <button id="vse_ctrlaltdel_btn" class="vse_toolbar_btn" title="Send Ctrl+Alt+Del">Ctrl+Alt+Del</button>
+            <button id="vse_disconnect_btn" class="vse_toolbar_btn vse_toolbar_btn_danger" title="Disconnect">Disconnect</button>
+        </div>
+    </div>
+
+    <!-- Debug bar (visible only with ?debug=1) -->
+    <div id="vse_debug_bar"></div>
+
+    <script type="module" src="vse-connection.js"></script>
+</body>
+</html>
