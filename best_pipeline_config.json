@@ -1,0 +1,33 @@
+{
+  "video": "test/test_cn.mp4",
+  "groundtruth": "groundtruth.srt",
+  "output": "test_cn.realtime.srt",
+  "best_config": {
+    "frame_sampling_base_fps": 2.619163824165812,
+    "burst_sampling_fps": 5.206793391396015,
+    "burst_duration_sec": 1.4065886041677513,
+    "frame_diff_threshold": 7.535270033363997,
+    "edge_density_trigger": 0.08502348060293648,
+    "OCR_confidence_threshold": 0.5828444584562928,
+    "temporal_merge_similarity": 62.029962367114734,
+    "subtitle_min_duration_ms": 479.83322657312317,
+    "OCR_cache_size": 107.59124741904152
+  },
+  "runtime_config": {
+    "frame_sampling_base_fps": 2.619163824165812,
+    "burst_sampling_fps": 5.206793391396015,
+    "burst_duration_sec": 1.4065886041677513,
+    "frame_diff_threshold": 7.535270033363997,
+    "edge_density_trigger": 0.08502348060293648,
+    "OCR_confidence_threshold": 0.5828444584562928,
+    "temporal_merge_similarity": 0.6202996236711473,
+    "subtitle_min_duration_ms": 480,
+    "OCR_cache_size": 108
+  },
+  "coverage_percent": 15.0,
+  "runtime_sec": 28.1337149143219,
+  "ocr_calls": 70,
+  "missed_subtitles": 34,
+  "false_subtitles": 6,
+  "fitness": -48.126742982864386
+}

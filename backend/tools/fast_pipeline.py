@@ -31,6 +31,7 @@ import time
 import hashlib
 import threading
 import queue
+import math
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Optional, List, Tuple, Dict
@@ -54,6 +55,8 @@ class FrameInfo:
     ocr_text: Optional[str] = None
     ocr_confidence: float = 0.0
     skipped: bool = False
+    text_present_hint: bool = False
+    in_micro_burst: bool = False
 
 
 @dataclass
@@ -81,6 +84,8 @@ class PipelineStats:
     diff_time: float = 0.0
     ocr_time: float = 0.0
     total_time: float = 0.0
+    burst_activations: int = 0
+    min_subtitle_duration_ms: float = 0.0
     _lock: threading.Lock = field(default_factory=threading.Lock)
 
     def summary(self) -> str:
@@ -101,6 +106,8 @@ class PipelineStats:
             f"  Actual OCR calls     : {self.ocr_calls}\n"
             f"  OCR batch runs       : {self.ocr_batch_count}\n"
             f"  OCR skip rate        : {skip_rate:.1f}%\n"
+            f"  Burst activations    : {self.burst_activations}\n"
+            f"  Min subtitle dur.    : {self.min_subtitle_duration_ms:.0f} ms\n"
             f"  Subtitles found      : {self.subtitles_found}\n"
             f"  ---\n"
             f"  Decode time          : {self.decode_time:.2f}s\n"
@@ -206,8 +213,9 @@ class TextCache:
         """Compute a perceptual hash (average hash) for a subtitle region."""
         if region is None or region.size == 0:
             return ""
-        # Downsample to 16x8 grayscale
-        small = cv2.resize(region, (16, 8))
+        # Blur + downsample to stabilize hash against compression noise.
+        smooth = cv2.GaussianBlur(region, (3, 3), 0)
+        small = cv2.resize(smooth, (12, 6), interpolation=cv2.INTER_AREA)
         if len(small.shape) == 3:
             small = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
         avg = small.mean()
@@ -242,36 +250,93 @@ class TextCache:
 class SmartFrameSampler:
     """Adaptive frame sampling: normally 2-3 fps, increase when subtitle activity detected."""
 
-    def __init__(self, video_fps: float, base_sample_fps: float = 3.0,
-                 active_sample_fps: float = 6.0, cooldown_frames: int = 30):
+    def __init__(self, video_fps: float,
+                 idle_sample_fps: float = 2.0,
+                 unstable_sample_fps: float = 6.0,
+                 stable_sample_fps: float = 1.0,
+                 burst_seconds: float = 1.0,
+                 micro_burst_fps: float = 12.0,
+                 micro_burst_seconds: float = 1.2):
         self.video_fps = video_fps
-        self.base_sample_fps = base_sample_fps
-        self.active_sample_fps = active_sample_fps
-        self.cooldown_frames = cooldown_frames
-        # Current state
-        self._active = False
-        self._frames_since_activity = 0
+        self.idle_sample_fps = idle_sample_fps
+        self.unstable_sample_fps = unstable_sample_fps
+        self.stable_sample_fps = stable_sample_fps
+        self.burst_seconds = burst_seconds
+        self.micro_burst_fps = micro_burst_fps
+        self.micro_burst_seconds = micro_burst_seconds
+
+        self._state = "idle"  # idle | unstable | stable
+        self._unstable_budget_samples = 0
+        self._micro_burst_until_frame = -1
+        self._next_sample_frame = 1
+        self._lock = threading.Lock()
 
     @property
     def current_interval(self) -> int:
         """How many video frames to skip between samples."""
-        fps = self.active_sample_fps if self._active else self.base_sample_fps
+        with self._lock:
+            fps = self._current_sample_fps_locked()
         return max(1, int(self.video_fps / fps))
 
-    def notify_subtitle_found(self):
-        """Called when a subtitle is detected — increases sampling rate."""
-        self._active = True
-        self._frames_since_activity = 0
+    def _current_sample_fps_locked(self) -> float:
+        # For decoder-side checks, micro burst is handled in should_sample using frame_no.
+        if self._state == "unstable":
+            return self.unstable_sample_fps
+        if self._state == "stable":
+            return self.stable_sample_fps
+        return self.idle_sample_fps
 
-    def notify_no_subtitle(self):
-        """Called when no subtitle found — may decrease sampling rate."""
-        self._frames_since_activity += 1
-        if self._frames_since_activity > self.cooldown_frames:
-            self._active = False
+    def _sample_fps_for_frame_locked(self, frame_no: int) -> float:
+        if frame_no <= self._micro_burst_until_frame:
+            return self.micro_burst_fps
+        return self._current_sample_fps_locked()
+
+    def notify_micro_burst(self, frame_no: int):
+        """Activate 12fps temporal rescue for 1.2 seconds."""
+        with self._lock:
+            burst_frames = max(1, int(self.video_fps * self.micro_burst_seconds))
+            self._micro_burst_until_frame = max(self._micro_burst_until_frame, frame_no + burst_frames)
+            # Ensure immediate sampling cadence update after burst starts.
+            self._next_sample_frame = min(self._next_sample_frame, frame_no + 1)
+
+    def is_micro_burst(self, frame_no: int) -> bool:
+        with self._lock:
+            return frame_no <= self._micro_burst_until_frame
+
+    def notify_unstable_change(self):
+        """Subtitle band changed: switch to temporary burst sampling."""
+        with self._lock:
+            self._state = "unstable"
+            budget = int(self.unstable_sample_fps * self.burst_seconds)
+            self._unstable_budget_samples = max(1, budget)
+
+    def notify_subtitle_stable(self):
+        """Subtitle is present and stable: downsample to 1fps."""
+        with self._lock:
+            self._state = "stable"
+
+    def notify_no_subtitle_recent(self):
+        """No subtitle present recently: keep a light 2fps watch."""
+        with self._lock:
+            self._state = "idle"
+
+    def mark_sample_processed(self):
+        """Decrease burst budget and fall back from unstable sampling automatically."""
+        with self._lock:
+            if self._state == "unstable":
+                self._unstable_budget_samples -= 1
+                if self._unstable_budget_samples <= 0:
+                    self._state = "idle"
 
     def should_sample(self, frame_no: int) -> bool:
         """Whether to sample this frame number."""
-        return frame_no % self.current_interval == 0
+        with self._lock:
+            if frame_no < self._next_sample_frame:
+                return False
+            fps = self._sample_fps_for_frame_locked(frame_no)
+            interval = max(1, int(self.video_fps / fps))
+            self._next_sample_frame = frame_no + interval
+            return True
 
 
 # ---------------------------------------------------------------------------
@@ -344,6 +409,12 @@ class BatchOCREngine:
         """Run OCR on a single image. Returns (text, avg_confidence)."""
         ocr = self._get_ocr()
         try:
+            # Keep OCR lightweight on very wide subtitle crops.
+            h, w = image.shape[:2]
+            if w > 480:
+                scale = 480.0 / w
+                image = cv2.resize(image, (480, max(1, int(h * scale))), interpolation=cv2.INTER_AREA)
+
             # Support both OcrRecogniser.predict() and PaddleOCR.ocr() interfaces
             if hasattr(ocr, 'predict'):
                 dt_box, rec_res = ocr.predict(image)
@@ -550,6 +621,10 @@ class FastSubtitlePipeline:
         self.similarity_threshold = similarity_threshold
         self.drop_score = drop_score
         self.progress_callback = progress_callback
+        self._static_hold_seconds = 1.0
+        self._high_conf_cache = 0.88
+        self._max_reuse_ms = 1300.0
+
 
         # Components (initialized on run)
         self.stats = PipelineStats()
@@ -566,6 +641,58 @@ class FastSubtitlePipeline:
         # Progress tracking
         self.progress_total = 0
         self.isFinished = False
+
+    @staticmethod
+    def _lightweight_text_presence(region: np.ndarray) -> Tuple[bool, float, int, Optional[Tuple[float, float]]]:
+        """Fast text-likeness check with SWT proxy + connected components."""
+        if region is None or region.size == 0:
+            return False, 0.0, 0, None
+
+        gray = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY) if len(region.shape) == 3 else region
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+
+        edges = cv2.Canny(gray, 80, 180)
+        edge_density = float(np.count_nonzero(edges)) / max(edges.size, 1)
+
+        _, bw = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        bw = cv2.morphologyEx(bw, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
+
+        dist = cv2.distanceTransform(bw, cv2.DIST_L2, 3)
+        swt_proxy = float(np.mean((dist > 0.8) & (dist < 4.5)))
+
+        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(bw, connectivity=8)
+        h, w = gray.shape
+        valid = 0
+        weighted_x = 0.0
+        weighted_y = 0.0
+        weight_sum = 0.0
+        for i in range(1, num_labels):
+            x, y, ww, hh, area = stats[i]
+            if area < 10 or area > 3500:
+                continue
+            if hh < 5 or hh > h * 0.85:
+                continue
+            if ww < 2 or ww > w * 0.95:
+                continue
+            valid += 1
+            cx, cy = centroids[i]
+            weighted_x += cx * area
+            weighted_y += cy * area
+            weight_sum += area
+
+        box_center = None
+        if weight_sum > 0:
+            box_center = (weighted_x / weight_sum, weighted_y / weight_sum)
+
+        text_present = (valid >= 18 and edge_density >= 0.010) or (valid >= 12 and swt_proxy >= 0.012)
+        return text_present, edge_density, valid, box_center
+
+    @staticmethod
+    def _region_hist(region: np.ndarray) -> np.ndarray:
+        gray = cv2.cvtColor(region, cv2.COLOR_BGR2GRAY) if len(region.shape) == 3 else region
+        hist = cv2.calcHist([gray], [0], None, [32], [0, 256])
+        cv2.normalize(hist, hist)
+        return hist
 
     def run(self, output_srt_path: str, output_txt_path: Optional[str] = None) -> PipelineStats:
         """
@@ -594,7 +721,15 @@ class FastSubtitlePipeline:
         self.stats.total_frames = total_frames
 
         # Initialize components
-        sampler = SmartFrameSampler(fps, base_sample_fps=self.sample_fps)
+        sampler = SmartFrameSampler(
+            fps,
+            idle_sample_fps=2.0,
+            unstable_sample_fps=max(6.0, self.sample_fps),
+            stable_sample_fps=1.0,
+            burst_seconds=1.0,
+            micro_burst_fps=12.0,
+            micro_burst_seconds=1.2,
+        )
         cropper = SubtitleRegionCropper(self.sub_area, frame_h, frame_w)
 
         print(f"[FastPipeline] Video: {total_frames} frames, {fps:.1f} fps, {frame_w}x{frame_h}")
@@ -626,6 +761,7 @@ class FastSubtitlePipeline:
                     frame=frame,
                 )
                 self._decode_queue.put(fi)
+                sampler.mark_sample_processed()
 
                 # Progress update
                 if self.progress_callback and frame_no % 100 == 0:
@@ -641,6 +777,22 @@ class FastSubtitlePipeline:
         def filter_worker():
             t0 = time.time()
             batch: List[FrameInfo] = []
+            prev_hist = None
+            prev_edge_density = None
+            prev_center = None
+            last_change_ms = -1.0
+            last_unstable_signal_ms = -1.0
+            last_ocr_dispatch_ms = -1.0
+            last_probe_ms = -1.0
+            last_nonempty_ocr_ms = -1.0
+            prev_luma = None
+            prev_band_var = None
+            micro_burst_until_ms = -1.0
+            last_burst_trigger_ms = -1.0
+            last_text_present = False
+            present_run = 0
+            absent_run = 0
+            static_hold_active = False
 
             while True:
                 fi = self._decode_queue.get()
@@ -658,21 +810,144 @@ class FastSubtitlePipeline:
                     fi.skipped = True
                     fi.ocr_text = ""
                     fi.ocr_confidence = 0.0
-                    sampler.notify_no_subtitle()
+                    fi.text_present_hint = False
+                    sampler.notify_no_subtitle_recent()
                     batch.append(fi)
                     if len(batch) >= self.ocr_batch_size:
                         self._ocr_queue.put(batch)
                         batch = []
                     continue
 
-                # Scene change detection on subtitle region
+                # Lightweight text presence gate (SWT + connected components)
+                raw_present, edge_density, _, box_center = self._lightweight_text_presence(fi.subtitle_region)
+                gray_roi = cv2.cvtColor(fi.subtitle_region, cv2.COLOR_BGR2GRAY) if len(fi.subtitle_region.shape) == 3 else fi.subtitle_region
+                luma = float(np.mean(gray_roi))
+                band_var = float(np.var(gray_roi))
+                if raw_present:
+                    present_run += 1
+                    absent_run = 0
+                else:
+                    absent_run += 1
+                    present_run = 0
+
+                if present_run >= 2:
+                    text_present = True
+                elif absent_run >= 2:
+                    text_present = False
+                else:
+                    text_present = last_text_present
+
+                fi.text_present_hint = text_present
+
+                hist = self._region_hist(fi.subtitle_region)
+                if prev_hist is None:
+                    hist_corr = 0.0
+                else:
+                    hist_corr = float(cv2.compareHist(prev_hist, hist, cv2.HISTCMP_CORREL))
+
+                edge_delta = 1.0 if prev_edge_density is None else abs(edge_density - prev_edge_density)
+                luma_delta = 0.0 if prev_luma is None else abs(luma - prev_luma)
+                var_delta = 0.0 if prev_band_var is None else abs(band_var - prev_band_var)
+                move_dist = 0.0
+                if prev_center is not None and box_center is not None:
+                    move_dist = math.hypot(box_center[0] - prev_center[0], box_center[1] - prev_center[1])
+
                 same_scene = self._scene_detector.is_same_scene(fi.subtitle_region)
-                if same_scene and not self._diff_filter.has_changed(fi.subtitle_region):
-                    # Diff-skipped: mark with sentinel values for OCR worker to propagate
+                changed_by_diff = self._diff_filter.has_changed(fi.subtitle_region)
+                text_transition = (text_present != last_text_present)
+                hist_trigger = prev_hist is not None and hist_corr < 0.80
+                edge_trigger = prev_edge_density is not None and edge_delta >= 0.030
+                luma_trigger = prev_luma is not None and luma_delta >= 10.0
+                var_trigger = prev_band_var is not None and var_delta >= 120.0
+                move_trigger = move_dist >= 12.0
+                diff_trigger = changed_by_diff and (text_transition or hist_trigger or edge_trigger or move_trigger or luma_trigger or var_trigger)
+                significant_change = (
+                    text_transition
+                    or hist_trigger
+                    or edge_trigger
+                    or luma_trigger
+                    or var_trigger
+                    or move_trigger
+                    or diff_trigger
+                )
+
+                in_burst_now = fi.timestamp_ms <= micro_burst_until_ms
+                micro_transition = (
+                    (edge_delta >= 0.060 and (var_delta >= 220.0 or hist_corr < 0.60))
+                    or (luma_delta >= 20.0 and var_delta >= 220.0)
+                    or (text_transition and edge_delta >= 0.040 and var_delta >= 150.0)
+                    or (text_transition and hist_corr < 0.55)
+                )
+                burst_cooldown_ok = (
+                    last_burst_trigger_ms < 0.0 or (fi.timestamp_ms - last_burst_trigger_ms) >= 3000.0
+                )
+                should_start_micro_burst = (not in_burst_now) and burst_cooldown_ok and micro_transition
+
+                if significant_change:
+                    if last_unstable_signal_ms < 0 or (fi.timestamp_ms - last_unstable_signal_ms) >= 250:
+                        sampler.notify_unstable_change()
+                        last_unstable_signal_ms = fi.timestamp_ms
+                    last_change_ms = fi.timestamp_ms
+                    static_hold_active = False
+
+                if should_start_micro_burst:
+                    sampler.notify_micro_burst(fi.frame_no)
+                    micro_burst_until_ms = fi.timestamp_ms + 1200.0
+                    last_burst_trigger_ms = fi.timestamp_ms
+                    with self.stats._lock:
+                        self.stats.burst_activations += 1
+
+                prev_hist = hist
+                prev_edge_density = edge_density
+                prev_luma = luma
+                prev_band_var = band_var
+                prev_center = box_center
+                last_text_present = text_present
+                fi.in_micro_burst = (fi.timestamp_ms <= micro_burst_until_ms) or sampler.is_micro_burst(fi.frame_no)
+
+                if fi.in_micro_burst:
+                    # Temporal rescue mode: force OCR on every burst frame.
+                    last_ocr_dispatch_ms = fi.timestamp_ms
+                    batch.append(fi)
+                    if len(batch) >= self.ocr_batch_size:
+                        self._ocr_queue.put(batch)
+                        batch = []
+                    continue
+
+                # No text-like pattern -> skip OCR immediately
+                force_probe = False
+                if not text_present and (last_probe_ms < 0 or (fi.timestamp_ms - last_probe_ms) >= 1200):
+                    # Periodic probe prevents long false-negative runs.
+                    force_probe = True
+
+                if not text_present and not force_probe:
                     fi.skipped = True
-                    fi.ocr_text = None      # sentinel: "inherit from previous"
-                    fi.ocr_confidence = -1.0  # sentinel
+                    fi.ocr_text = ""
+                    fi.ocr_confidence = 0.0
                     fi.subtitle_region = None
+                    sampler.notify_no_subtitle_recent()
+                    with self.stats._lock:
+                        self.stats.scene_change_skips += 1
+                    batch.append(fi)
+                    if len(batch) >= self.ocr_batch_size:
+                        self._ocr_queue.put(batch)
+                        batch = []
+                    continue
+
+                if force_probe:
+                    sampler.notify_unstable_change()
+
+                stable_for_ms = 0.0 if last_change_ms < 0 else (fi.timestamp_ms - last_change_ms)
+                if stable_for_ms >= self._static_hold_seconds * 1000:
+                    static_hold_active = True
+
+                # Early exit on static subtitle >1s unless a fresh change appears
+                if static_hold_active and not significant_change:
+                    fi.skipped = True
+                    fi.ocr_text = None
+                    fi.ocr_confidence = -1.0
+                    fi.subtitle_region = None
+                    sampler.notify_subtitle_stable()
                     with self.stats._lock:
                         self.stats.diff_filter_skips += 1
                     batch.append(fi)
@@ -681,8 +956,42 @@ class FastSubtitlePipeline:
                         batch = []
                     continue
 
-                if not same_scene:
-                    self._diff_filter.reset()
+                # Additional diff gate when text remains stable
+                if not significant_change:
+                    fi.skipped = True
+                    fi.ocr_text = None
+                    fi.ocr_confidence = -1.0
+                    fi.subtitle_region = None
+                    sampler.notify_subtitle_stable()
+                    with self.stats._lock:
+                        self.stats.diff_filter_skips += 1
+                    batch.append(fi)
+                    if len(batch) >= self.ocr_batch_size:
+                        self._ocr_queue.put(batch)
+                        batch = []
+                    continue
+
+                # Avoid reusing OCR text too long when subtitle band still looks active.
+                if text_present and last_nonempty_ocr_ms >= 0:
+                    if (fi.timestamp_ms - last_nonempty_ocr_ms) >= self._max_reuse_ms:
+                        significant_change = True
+                        sampler.notify_unstable_change()
+
+                # Throttle OCR to 1fps for stable subtitle runs.
+                if text_present and (not text_transition) and last_ocr_dispatch_ms >= 0:
+                    if (fi.timestamp_ms - last_ocr_dispatch_ms) < 700:
+                        fi.skipped = True
+                        fi.ocr_text = None
+                        fi.ocr_confidence = -1.0
+                        fi.subtitle_region = None
+                        sampler.notify_subtitle_stable()
+                        with self.stats._lock:
+                            self.stats.diff_filter_skips += 1
+                        batch.append(fi)
+                        if len(batch) >= self.ocr_batch_size:
+                            self._ocr_queue.put(batch)
+                            batch = []
+                        continue
 
                 # Check text cache
                 fi.region_hash = self._text_cache.compute_hash(fi.subtitle_region)
@@ -691,6 +1000,12 @@ class FastSubtitlePipeline:
                     fi.ocr_text, fi.ocr_confidence = cached
                     fi.skipped = True
                     fi.subtitle_region = None
+                    if fi.ocr_text and fi.ocr_confidence >= self._high_conf_cache:
+                        sampler.notify_subtitle_stable()
+                    elif fi.ocr_text:
+                        sampler.notify_unstable_change()
+                    else:
+                        sampler.notify_no_subtitle_recent()
                     with self.stats._lock:
                         self.stats.cache_hits += 1
                     batch.append(fi)
@@ -700,6 +1015,9 @@ class FastSubtitlePipeline:
                     continue
 
                 # Needs OCR
+                last_ocr_dispatch_ms = fi.timestamp_ms
+                if force_probe:
+                    last_probe_ms = fi.timestamp_ms
                 batch.append(fi)
                 if len(batch) >= self.ocr_batch_size:
                     self._ocr_queue.put(batch)
@@ -714,6 +1032,8 @@ class FastSubtitlePipeline:
             results: List[FrameInfo] = []
             last_known_text = ""
             last_known_conf = 0.0
+            sticky_text = ""
+            sticky_conf = 0.0
 
             while True:
                 batch = self._ocr_queue.get()
@@ -731,27 +1051,43 @@ class FastSubtitlePipeline:
                     for fi in needs_ocr:
                         if fi.ocr_text and fi.region_hash:
                             self._text_cache.put(fi.region_hash, fi.ocr_text, fi.ocr_confidence)
+                        if fi.ocr_text and fi.ocr_confidence >= self._high_conf_cache:
+                            sticky_text = fi.ocr_text
+                            sticky_conf = fi.ocr_confidence
+                        if fi.ocr_text:
+                            last_nonempty_ocr_ms = fi.timestamp_ms
                         fi.subtitle_region = None
 
                 # Propagate text: diff-skipped frames inherit last known text
                 for fi in batch:
                     if fi.ocr_text is None and fi.ocr_confidence == -1.0:
                         # Diff-skipped — inherit from previous
-                        fi.ocr_text = last_known_text
-                        fi.ocr_confidence = last_known_conf
+                        if sticky_text:
+                            fi.ocr_text = sticky_text
+                            fi.ocr_confidence = sticky_conf
+                        else:
+                            fi.ocr_text = last_known_text
+                            fi.ocr_confidence = last_known_conf
                     elif fi.ocr_text == "":
                         # Explicitly empty region
                         last_known_text = ""
                         last_known_conf = 0.0
+                        sticky_text = ""
+                        sticky_conf = 0.0
                     elif fi.ocr_text:
                         # Has text (from OCR or cache)
                         last_known_text = fi.ocr_text
                         last_known_conf = fi.ocr_confidence
+                        if fi.ocr_confidence >= self._high_conf_cache:
+                            sticky_text = fi.ocr_text
+                            sticky_conf = fi.ocr_confidence
 
-                    if fi.ocr_text:
-                        sampler.notify_subtitle_found()
+                    if fi.ocr_text and fi.ocr_confidence >= self._high_conf_cache:
+                        sampler.notify_subtitle_stable()
+                    elif fi.ocr_text:
+                        sampler.notify_unstable_change()
                     else:
-                        sampler.notify_no_subtitle()
+                        sampler.notify_no_subtitle_recent()
 
                 results.extend(batch)
 
@@ -763,7 +1099,12 @@ class FastSubtitlePipeline:
             results.sort(key=lambda x: x.timestamp_ms)
             for fi in results:
                 text = fi.ocr_text if fi.ocr_text and fi.ocr_confidence >= self.drop_score else ""
+                if text and fi.in_micro_burst:
+                    # Minimum persistence rescue: extend single-frame burst hits ±0.5s.
+                    self._deduplicator.feed(text, max(0.0, fi.timestamp_ms - 500.0))
                 self._deduplicator.feed(text, fi.timestamp_ms)
+                if text and fi.in_micro_burst:
+                    self._deduplicator.feed(text, fi.timestamp_ms + 500.0)
 
             with self.stats._lock:
                 self.stats.ocr_time = time.time() - t0
@@ -785,6 +1126,8 @@ class FastSubtitlePipeline:
         # Build subtitle timeline
         entries = self._deduplicator.finalize()
         self.stats.subtitles_found = len(entries)
+        if entries:
+            self.stats.min_subtitle_duration_ms = min(max(0.0, e.end_ms - e.start_ms) for e in entries)
 
         # Write output files
         SubtitleTimelineBuilder.build_srt(entries, output_srt_path)
